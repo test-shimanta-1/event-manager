@@ -70,5 +70,6 @@ function log_manager_func()
 
 /** invoking diff. events into plugin */
 require_once plugin_dir_path( __FILE__ ).'/includes/post-log-events.php';
+require_once plugin_dir_path( __FILE__ ).'/includes/user-log-events.php';
 
 ?>
