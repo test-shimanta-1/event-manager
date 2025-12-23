@@ -56,6 +56,7 @@ class BXFT_Table extends WP_List_Table
 
     public function prepare_items()
     {
+        $this->process_bulk_action();
         $per_page = 5;
         $current_page = $this->get_pagenum();
 
@@ -127,6 +128,7 @@ class BXFT_Table extends WP_List_Table
     public function get_columns()
     {
         return array(
+            'cb' => '<input type="checkbox" />',
             'userid' => 'User',
             'ip_address' => 'IP Address',
             'event_time' => 'Date',
@@ -166,6 +168,47 @@ class BXFT_Table extends WP_List_Table
             esc_html($user->user_login),
             esc_html($user->user_email),
             esc_html($user->display_name)
+        );
+    }
+
+    public function column_cb($item)
+    {
+        return sprintf(
+            '<input type="checkbox" name="id[]" value="%d" />',
+            absint($item['id'])
+        );
+    }
+
+    protected function get_bulk_actions() {
+        $actions = array(
+            'delete' => __('Delete', 'log_manager'),
+        );
+        return $actions;
+    }
+
+    public function process_bulk_action()
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'event_db';
+
+        if ($this->current_action() !== 'delete') {
+            return;
+        }
+        if (empty($_REQUEST['id']) || !is_array($_REQUEST['id'])) {
+            return;
+        }
+
+        $ids = array_map('absint', $_REQUEST['id']);
+        if (empty($ids)) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM $table WHERE id IN ($placeholders)",
+                $ids
+            )
         );
     }
 
@@ -222,6 +265,13 @@ function display_bxft_table()
 {
     $bxft_table = new BXFT_Table();
     $bxft_table->prepare_items();
+    
+    if ( isset($_GET['action'], $_GET['id']) &&  $_GET['action'] === 'delete' &&  is_array($_GET['id']) && !empty($_GET['id'])) {
+    $deleted_count = count($_GET['id']);
+    echo '<div class="notice notice-success is-dismissible">';
+    echo '<p>' . sprintf(_n('%d log deleted successfully.', '%d logs deleted successfully.', $deleted_count), $deleted_count) . '</p>';
+    echo '</div>';
+    }
     ?>
     <style>
         .firstSpan {
