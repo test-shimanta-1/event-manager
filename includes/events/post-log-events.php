@@ -75,7 +75,7 @@ function sdw_post_logs( $new_status, $old_status, $post ) {
                     'object_type' => 'Post',
                     'warning_level' => 'medium' ,
                     'event_type' => 'modified',
-                    'message'    => 'From draft to publish. '.'<br/>Post Title: <b>'.get_the_title($post->ID).'</b><br> Post ID: <b>'.$post->ID.'</b> <br/>Post Type: <b>'.get_post_type($post->ID).'</b>',
+                    'message'    => 'Post status has been changed from draft to publish. '.'<br/>Post Title: <b>'.get_the_title($post->ID).'</b><br> Post ID: <b>'.$post->ID.'</b> <br/>Post Type: <b>'.get_post_type($post->ID).'</b>',
                 ]
             );
         }else if($old_status !== 'draft' && $new_status === 'publish'){
@@ -104,7 +104,7 @@ function sdw_post_logs( $new_status, $old_status, $post ) {
                 'object_type' => 'Post',
                 'warning_level' => 'low' ,
                 'event_type' => 'created',
-                'message'    => 'New post created. '.'<br/>Post Title: <b>'.get_the_title($post->ID).'</b><br> Post ID: <b>'.$post->ID.'</b> <br/>Post Type: <b>'.get_post_type($post->ID).'</b>',
+                'message'    => 'New post has been created. '.'<br/>Post Title: <b>'.get_the_title($post->ID).'</b><br> Post ID: <b>'.$post->ID.'</b> <br/>Post Type: <b>'.get_post_type($post->ID).'</b>',
             ]
         );
     }
