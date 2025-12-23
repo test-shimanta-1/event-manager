@@ -24,18 +24,33 @@ class BXFT_Table extends WP_List_Table
     {
         global $wpdb;
         $table = $wpdb->prefix . 'event_db';
+        $where = array();
+        $values = array();
 
         if (!empty($_GET['s'])) {
             $like = '%' . $wpdb->esc_like($_GET['s']) . '%';
-            return (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table WHERE ip_address LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR message LIKE %s",
-                $like,
-                $like,
-                $like,
-                $like
-            ));
+            $where[] = "(ip_address LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR message LIKE %s)";
+            array_push($values, $like, $like, $like, $like);
         }
-        return (int) $wpdb->get_var("SELECT COUNT(*) FROM $table");
+
+        if (!empty($_GET['from_date'])) {
+            $where[] = "DATE(event_time) >= %s";
+            $values[] = $_GET['from_date'];
+        }
+
+        if (!empty($_GET['to_date'])) {
+            $where[] = "DATE(event_time) <= %s";
+            $values[] = $_GET['to_date'];
+        }
+
+        $where_sql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+        $sql = "SELECT COUNT(*) FROM $table $where_sql";
+
+        return (int) (
+            !empty($values)
+            ? $wpdb->get_var($wpdb->prepare($sql, $values))
+            : $wpdb->get_var($sql)
+        );
     }
 
 
@@ -65,30 +80,40 @@ class BXFT_Table extends WP_List_Table
     {
         global $wpdb;
         $table = $wpdb->prefix . 'event_db';
-
         $orderby = !empty($_GET['orderby']) ? esc_sql($_GET['orderby']) : 'id';
-        $order = !empty($_GET['order']) && $_GET['order'] === 'asc' ? 'ASC' : 'DESC';
+        $order = (!empty($_GET['order']) && $_GET['order'] === 'asc') ? 'ASC' : 'DESC';
 
-        $search = '';
+        $where = array();
+        $values = array();
+
         if (!empty($_GET['s'])) {
             $like = '%' . $wpdb->esc_like($_GET['s']) . '%';
-            $search = $wpdb->prepare(
-                " WHERE ip_address LIKE %s
-                OR event_type LIKE %s
-                OR object_type LIKE %s
-                OR message LIKE %s",
-                $like,
-                $like,
-                $like,
-                $like
-            );
+            $where[] = "(ip_address LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR message LIKE %s)";
+            array_push($values, $like, $like, $like, $like);
         }
 
+        if (!empty($_GET['from_date'])) {
+            $where[] = "DATE(event_time) >= %s";
+            $values[] = $_GET['from_date'];
+        }
+
+        if (!empty($_GET['to_date'])) {
+            $where[] = "DATE(event_time) <= %s";
+            $values[] = $_GET['to_date'];
+        }
+
+        $where_sql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
         $offset = ($page_number - 1) * $per_page;
-        $sql = "SELECT * FROM $table $search ORDER BY $orderby $order LIMIT %d OFFSET %d";
+        $sql = "SELECT * FROM $table
+            $where_sql
+            ORDER BY $orderby $order
+            LIMIT %d OFFSET %d";
+
+        $values[] = $per_page;
+        $values[] = $offset;
 
         return $wpdb->get_results(
-            $wpdb->prepare($sql, $per_page, $offset),
+            $wpdb->prepare($sql, $values),
             ARRAY_A
         );
     }
@@ -147,10 +172,10 @@ class BXFT_Table extends WP_List_Table
 
     public function column_default($item, $column_name)
     {
-        if ( $column_name === 'message' ) {
+        if ($column_name === 'message') {
             $full_message = $item['message'];
-            $short = mb_substr( $full_message, 0, 20 );
-            if ( mb_strlen( $full_message ) <= 20 ) {
+            $short = mb_substr($full_message, 0, 30);
+            if (mb_strlen($full_message) <= 20) {
                 return $short;
             }
 
@@ -163,8 +188,33 @@ class BXFT_Table extends WP_List_Table
             );
         }
 
-        return $item[ $column_name ] ?? '—';
+        return $item[$column_name] ?? '—';
     }
+
+    /** date wise filter functionality */
+    public function extra_tablenav($which)
+    {
+        if ($which !== 'top') {
+            return;
+        }
+
+        $from = esc_attr($_GET['from_date'] ?? '');
+        $to = esc_attr($_GET['to_date'] ?? '');
+        ?>
+        <div class="alignleft actions">
+
+            <label for="from_date" class="screen-reader-text">From date</label>
+            <input type="date" name="from_date" value="<?php echo $from; ?>" />
+
+            <label for="to_date" class="screen-reader-text">To date</label>
+            <input type="date" name="to_date" value="<?php echo $to; ?>" />
+
+            <?php submit_button(__('Filter'), '', 'filter_action', false); ?>
+
+        </div>
+        <?php
+    }
+
 
 }
 
@@ -205,25 +255,25 @@ function display_bxft_table()
         </form>
     </div>
     <script>
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('bxft-read-more')) {
-            e.preventDefault();
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('bxft-read-more')) {
+                e.preventDefault();
 
-            const link = e.target;
-            const shortText = link.previousElementSibling.previousElementSibling;
-            const fullText  = link.previousElementSibling;
+                const link = e.target;
+                const shortText = link.previousElementSibling.previousElementSibling;
+                const fullText = link.previousElementSibling;
 
-            if (fullText.style.display === 'none') {
-                shortText.style.display = 'none';
-                fullText.style.display  = 'inline';
-                link.textContent = 'Read less';
-            } else {
-                shortText.style.display = 'inline';
-                fullText.style.display  = 'none';
-                link.textContent = 'Read more';
+                if (fullText.style.display === 'none') {
+                    shortText.style.display = 'none';
+                    fullText.style.display = 'inline';
+                    link.textContent = 'Read less';
+                } else {
+                    shortText.style.display = 'inline';
+                    fullText.style.display = 'none';
+                    link.textContent = 'Read more';
+                }
             }
-        }
-    });
+        });
     </script>
     <?php
 }
