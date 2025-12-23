@@ -9,36 +9,79 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 
 class BXFT_Table extends WP_List_Table {
 
+    public function get_sortable_columns() {
+        return array(
+            'event_time'    => array( 'event_time', true ),
+            'warning_level' => array( 'warning_level', false ),
+            'event_type'    => array( 'event_type', false ),
+            'object_type'   => array( 'object_type', false ),
+        );
+    }
+
+    public function get_total_items() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'event_db';
+
+        if ( ! empty( $_GET['s'] ) ) {
+            $like = '%' . $wpdb->esc_like( $_GET['s'] ) . '%';
+            return (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(*) FROM $table WHERE ip_address LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR message LIKE %s",
+                $like, $like, $like, $like
+            ) );
+        }
+        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
+    }
+
+
     public function prepare_items() {
-        $data         = $this->wp_list_table_data();
         $per_page     = 5;
         $current_page = $this->get_pagenum();
-        $total_items  = count( $data );
-        $this->set_pagination_args(
-            array(
-                'total_items' => $total_items,
-                'per_page'    => $per_page,
-            )
-        );
 
-        $this->items           = array_slice(
-            $data,
-            ( ( $current_page - 1 ) * $per_page ),
-            $per_page
-        );
-        $columns               = $this->get_columns();
-        $hidden                = $this->get_hidden_columns();
-        $this->_column_headers = array( $columns, $hidden );
+        $data = $this->wp_list_table_data( $per_page, $current_page );
+        $total_items = $this->get_total_items();
+
+        $this->set_pagination_args( array(
+            'total_items' => $total_items,
+            'per_page'    => $per_page,
+        ) );
+
+        $this->items = $data;
+
+        $columns  = $this->get_columns();
+        $hidden   = $this->get_hidden_columns();
+        $sortable = $this->get_sortable_columns();
+
+        $this->_column_headers = array( $columns, $hidden, $sortable );
     }
 
-    public function wp_list_table_data() {
-      global $wpdb;
-      $table = $wpdb->prefix . 'event_db';
-      return $wpdb->get_results(
-          "SELECT * FROM $table ORDER BY id DESC",
-          ARRAY_A
-      );
+    public function wp_list_table_data( $per_page, $page_number ) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'event_db';
+
+        $orderby = ! empty( $_GET['orderby'] ) ? esc_sql( $_GET['orderby'] ) : 'id';
+        $order   = ! empty( $_GET['order'] ) && $_GET['order'] === 'asc' ? 'ASC' : 'DESC';
+
+        $search = '';
+        if ( ! empty( $_GET['s'] ) ) {
+            $like = '%' . $wpdb->esc_like( $_GET['s'] ) . '%';
+            $search = $wpdb->prepare(
+                " WHERE ip_address LIKE %s
+                OR event_type LIKE %s
+                OR object_type LIKE %s
+                OR message LIKE %s",
+                $like, $like, $like, $like
+            );
+        }
+
+        $offset = ( $page_number - 1 ) * $per_page;
+        $sql = "SELECT * FROM $table $search ORDER BY $orderby $order LIMIT %d OFFSET %d";
+
+        return $wpdb->get_results(
+            $wpdb->prepare( $sql, $per_page, $offset ),
+            ARRAY_A
+        );
     }
+
 
     public function get_hidden_columns() {
         return array( 'id' );
@@ -57,34 +100,38 @@ class BXFT_Table extends WP_List_Table {
     }
 
     public function column_userid( $item ) {
-
-        $user_id   = absint( $item['userid'] );
-        $user_info = get_userdata( $user_id );
-
-        if ( ! $user_info ) {
-            return '<em>Unknown User</em>';
-        }
-
-        $roles = implode( ', ', array_map( 'ucfirst', $user_info->roles ) );
-
-        return sprintf(
-            '<span class="firstSpan">
-                %s
-                <span class="secondSpan">
-                    <b>Username:</b> %s<br>
-                    <b>Email:</b> %s<br>
-                    <b>Nickname:</b> %s
-                </span>
-            </span>',
-            esc_html( $roles ),
-            esc_html( $user_info->user_login ),
-            esc_html( $user_info->user_email ),
-            esc_html( $user_info->user_nicename )
-        );
+    if ( empty( $item['userid'] ) ) {
+        return '<em>Guest</em>';
     }
 
-    public function column_default( $item, $column_name ) {
+    $user_id = absint( $item['userid'] );
+    $user    = get_userdata( $user_id );
 
+    if ( ! $user ) {
+        return '<em>User Deleted</em>';
+    }
+
+    $roles = ! empty( $user->roles )
+        ? implode( ', ', array_map( 'ucfirst', $user->roles ) )
+        : '—';
+
+    return sprintf(
+        '<span class="firstSpan">%s
+            <span class="secondSpan">
+                <b>Username:</b> %s<br>
+                <b>Email:</b> %s<br>
+                <b>Nickname:</b> %s
+            </span>
+        </span>',
+        esc_html( $roles ),
+        esc_html( $user->user_login ),
+        esc_html( $user->user_email ),
+        esc_html( $user->display_name )
+    );
+}
+
+
+    public function column_default( $item, $column_name ) {
         $allowed = array(
             'ip_address',
             'event_time',
@@ -97,7 +144,6 @@ class BXFT_Table extends WP_List_Table {
         if ( in_array( $column_name, $allowed, true ) ) {
             return $item[ $column_name ];
         }
-
         return '—';
     }
 
@@ -129,8 +175,14 @@ function display_bxft_table() {
     }
     </style>
     <div class="wrap">
-        <?php 
-        $bxft_table->display(); ?>
+        <h1 class="wp-heading-inline">Logs Dashboard</h1>
+        <form method="get">
+            <input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>" />
+            <?php
+            $bxft_table->search_box( 'Search Logs', 'bxft-search' );
+            $bxft_table->display();
+            ?>
+        </form>
     </div>
     <?php
 }
