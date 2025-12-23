@@ -147,23 +147,20 @@ class BXFT_Table extends WP_List_Table
 
     public function column_default($item, $column_name)
     {
-         if ( $column_name === 'message' ) {
+        if ( $column_name === 'message' ) {
+            $full_message = $item['message'];
+            $short = mb_substr( $full_message, 0, 20 );
+            if ( mb_strlen( $full_message ) <= 20 ) {
+                return $short;
+            }
 
-        $full_message = $item['message'];
-
-        $short = mb_substr( $full_message, 0, 20 );
-
-        if ( mb_strlen( $full_message ) <= 20 ) {
-            return $short;
-        }
-
-        return sprintf(
-            '<span class="bxft-short">%s...</span>
-             <span class="bxft-full" style="display:none;">%s</span>
-             <a href="#" class="bxft-read-more">Read more</a>',
-            $short,
-            $full_message
-        );
+            return sprintf(
+                '<span class="bxft-short">%s...</span>
+                <span class="bxft-full" style="display:none;">%s</span>
+                <a href="#" class="bxft-read-more">Read more</a>',
+                $short,
+                $full_message
+            );
         }
 
         return $item[ $column_name ] ?? '—';
