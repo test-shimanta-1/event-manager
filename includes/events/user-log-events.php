@@ -44,3 +44,26 @@ function sdw_plugin_handle_failed_login( $username ) {
     
      return;
 }
+
+
+function redirect_after_logout( $user_id ) {
+    if($userod){
+         global $wpdb;
+    $table = $wpdb->prefix . 'event_db';
+    $wpdb->insert(
+            $table,
+            [
+                'ip_address' => $_SERVER['REMOTE_ADDR'],
+                'userid'     => $user_id,
+                'event_time' => date("Y/m/d"),
+                'object_type' => 'User',
+                'warning_level' => 'low' ,
+                'event_type' => 'Logout',
+                'message'    => 'User login attempt failed',
+            ]
+        );
+    }
+
+    return;
+}
+add_action( 'wp_logout', 'redirect_after_logout'  );

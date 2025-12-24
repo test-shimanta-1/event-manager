@@ -217,7 +217,7 @@ class BXFT_Table extends WP_List_Table
     {
         if ($column_name === 'message') {
             $full_message = $item['message'];
-            $short = mb_substr($full_message, 0, 30);
+            $short = mb_substr($full_message, 0, 20);
             if (mb_strlen($full_message) <= 20) {
                 return $short;
             }
