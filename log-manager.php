@@ -26,6 +26,10 @@ define('LOG_MANAGER_FILE', __FILE__);
 // Core Includes.
 require_once LOG_MANAGER_PATH . 'includes/class-log-manager.php';
 
+// initializing mpdf
+if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
+	require_once __DIR__ . '/vendor/autoload.php';
+}
 
 function initialize_log_manager()
 {

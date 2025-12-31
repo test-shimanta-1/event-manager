@@ -100,8 +100,10 @@ class Log_Manager_Log_Table extends WP_List_Table
 			<!-- Export Dropdown -->
 			<select name="export_type">
 				<option value="">Export</option>
-				<option value="csv" <?php selected($_GET['export_type'] ?? '', 'csv'); ?>>Export CSV</option>
+				<option value="csv">Export CSV</option>
+				<option value="pdf">Export PDF</option>
 			</select>
+
 
 			<?php submit_button('Export', 'secondary', 'export_action', false); ?>
 
@@ -638,3 +640,177 @@ function log_manager_export_csv_handler()
 	exit;
 }
 add_action('admin_init', 'log_manager_export_csv_handler');
+
+
+/**
+ * Exports log records as a PDF file.
+ *
+ * - Triggers from dashboard Export → PDF action.
+ * - Applies all active filters (search, date, user, role, severity).
+ * - Exports all matching logs (not limited by pagination).
+ * - Generates PDF using mPDF and forces file download.
+ *
+ * @since 1.0.0
+ * @package Log_Manager
+ */
+use Mpdf\Mpdf;
+function log_manager_export_pdf_handler()
+{
+	if (!is_admin()) {
+		return;
+	}
+
+	if (empty($_GET['export_action']) || ($_GET['export_type'] ?? '') !== 'pdf') {
+		return;
+	}
+
+	if (!current_user_can('manage_options')) {
+		return;
+	}
+
+	global $wpdb;
+	$table = $wpdb->prefix . 'event_db';
+
+	$where = [];
+	$values = [];
+
+	/* ---------- SEARCH ---------- */
+	if (!empty($_GET['s'])) {
+		$like = '%' . $wpdb->esc_like($_GET['s']) . '%';
+		$where[] = "(ip_address LIKE %s 
+					OR event_type LIKE %s 
+					OR object_type LIKE %s 
+					OR message LIKE %s
+					OR severity LIKE %s)";
+		array_push($values, $like, $like, $like, $like, $like);
+	}
+
+	/* ---------- DATE FILTER ---------- */
+	if (!empty($_GET['start_date'])) {
+		$where[] = "event_time >= %s";
+		$values[] = $_GET['start_date'] . ' 00:00:00';
+	}
+
+	if (!empty($_GET['end_date'])) {
+		$where[] = "event_time <= %s";
+		$values[] = $_GET['end_date'] . ' 23:59:59';
+	}
+
+	/* ---------- USER FILTER ---------- */
+	if (!empty($_GET['user_id'])) {
+		$where[] = "userid = %d";
+		$values[] = absint($_GET['user_id']);
+	}
+
+	/* ---------- SEVERITY ---------- */
+	if (!empty($_GET['severity'])) {
+		$where[] = "severity = %s";
+		$values[] = sanitize_text_field($_GET['severity']);
+	}
+
+	/* ---------- ROLE ---------- */
+	if (!empty($_GET['role'])) {
+		$user_ids = get_users([
+			'role' => sanitize_text_field($_GET['role']),
+			'fields' => 'ID',
+		]);
+
+		if (!empty($user_ids)) {
+			$where[] = 'userid IN (' . implode(',', array_map('absint', $user_ids)) . ')';
+		} else {
+			$where[] = '1=0';
+		}
+	}
+
+	$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+	$sql = "SELECT * FROM $table $where_sql ORDER BY event_time DESC";
+
+	$logs = $values
+		? $wpdb->get_results($wpdb->prepare($sql, $values), ARRAY_A)
+		: $wpdb->get_results($sql, ARRAY_A);
+
+	/* ---------- mPDF SETUP ---------- */
+	$upload_dir = wp_upload_dir();
+	$temp_dir = $upload_dir['basedir'] . '/mpdf-temp';
+
+	if (!file_exists($temp_dir)) {
+		wp_mkdir_p($temp_dir);
+	}
+
+	$mpdf = new Mpdf([
+		'tempDir' => $temp_dir,
+		'mode' => 'utf-8',
+		'format' => 'A4-L',
+	]);
+
+	/* ---------- PDF HTML ---------- */
+	ob_start();
+	?>
+	<style>
+		body {
+			font-family: sans-serif;
+			font-size: 11px;
+		}
+
+		h1 {
+			text-align: center;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		th,
+		td {
+			border: 1px solid #000;
+			padding: 6px;
+		}
+
+		th {
+			background: #f0f0f0;
+		}
+	</style>
+
+	<h1>Log Manager Report</h1>
+
+	<table>
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>User</th>
+				<th>IP</th>
+				<th>Date</th>
+				<th>Severity</th>
+				<th>Event</th>
+				<th>Object</th>
+				<th>Message</th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach ($logs as $log): ?>
+				<tr>
+					<td><?php echo esc_html($log['id']); ?></td>
+					<td><?php echo esc_html($log['userid'] ?: 'Guest'); ?></td>
+					<td><?php echo esc_html($log['ip_address']); ?></td>
+					<td><?php echo esc_html($log['event_time']); ?></td>
+					<td><?php echo esc_html(ucfirst($log['severity'])); ?></td>
+					<td><?php echo esc_html($log['event_type']); ?></td>
+					<td><?php echo esc_html($log['object_type']); ?></td>
+					<td><?php echo esc_html(wp_strip_all_tags($log['message'])); ?></td>
+				</tr>
+			<?php endforeach; ?>
+		</tbody>
+	</table>
+	<?php
+	$html = ob_get_clean();
+
+	$mpdf->WriteHTML($html);
+	$mpdf->Output(
+		'log-manager-' . date('Y-m-d') . '.pdf',
+		'D'
+	);
+	exit;
+}
+add_action('admin_init', 'log_manager_export_pdf_handler');
+
