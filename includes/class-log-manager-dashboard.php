@@ -3,7 +3,7 @@
  * Plugin Dashboard View Class File.
  * Handels: pagination, filteration, sorting, bulk actions, data fetching
  * 
- * @since 1.0.0
+ * @since 1.0.1
  * @package Log_Manager
  */
 
@@ -51,10 +51,16 @@ class Log_Manager_Log_Table extends WP_List_Table
 		$roles = wp_roles()->roles;
 		$users = get_users(['fields' => ['ID', 'display_name']]);
 
-		$start_date = $_GET['start_date'] ?? '';
-		$end_date = $_GET['end_date'] ?? '';
-		$role = $_GET['role'] ?? '';
-		$user_id = $_GET['user_id'] ?? '';
+		if (!empty($_POST['reset_filters'])) {
+			$_POST = [];
+			wp_redirect(admin_url('admin.php?page=' . esc_attr($_REQUEST['page'])));
+			exit;
+		}
+
+		$start_date = $_POST['start_date'] ?? '';
+		$end_date = $_POST['end_date'] ?? '';
+		$role = $_POST['role'] ?? '';
+		$user_id = $_POST['user_id'] ?? '';
 		?>
 		<div class="alignleft actions">
 
@@ -87,25 +93,31 @@ class Log_Manager_Log_Table extends WP_List_Table
 			<!-- Severity Filter -->
 			<select name="severity">
 				<option value="">All Severities</option>
-				<option value="info" <?php selected($_GET['severity'] ?? '', 'info'); ?>>Info</option>
-				<option value="notice" <?php selected($_GET['severity'] ?? '', 'notice'); ?>>Notice</option>
-				<option value="warning" <?php selected($_GET['severity'] ?? '', 'warning'); ?>>Warning</option>
-				<option value="error" <?php selected($_GET['severity'] ?? '', 'error'); ?>>Error</option>
-				<option value="critical" <?php selected($_GET['severity'] ?? '', 'critical'); ?>>Critical</option>
-				<option value="bug" <?php selected($_GET['severity'] ?? '', 'bug'); ?>>Bug</option>
+				<option value="info" <?php selected($_POST['severity'] ?? '', 'info'); ?>>Info</option>
+				<option value="notice" <?php selected($_POST['severity'] ?? '', 'notice'); ?>>Notice</option>
+				<option value="warning" <?php selected($_POST['severity'] ?? '', 'warning'); ?>>Warning</option>
+				<option value="error" <?php selected($_POST['severity'] ?? '', 'error'); ?>>Error</option>
+				<option value="critical" <?php selected($_POST['severity'] ?? '', 'critical'); ?>>Critical</option>
+				<option value="bug" <?php selected($_POST['severity'] ?? '', 'bug'); ?>>Bug</option>
 			</select>
 
 			<?php submit_button('Filter', '', 'filter_action', false); ?>
 
-			<!-- Export Dropdown -->
-			<select name="export_type">
-				<option value="">Export</option>
-				<option value="csv">Export CSV</option>
-				<option value="pdf">Export PDF</option>
-			</select>
+			<!-- Export CSV Button -->
+			<button type="submit" name="export_csv" value="1" class="button button-secondary">
+				Export CSV
+			</button>
 
+			<!-- Export PDF Button -->
+			<button type="submit" name="export_pdf" value="1" class="button button-secondary">
+				Export PDF
+			</button>
 
-			<?php submit_button('Export', 'secondary', 'export_action', false); ?>
+			<!-- Reset Button -->
+			<a href="<?php echo esc_url(remove_query_arg(['start_date', 'end_date', 'role', 'user_id', 'severity', 's'])); ?>"
+				class="button">
+				Reset
+			</a>
 
 		</div>
 		<?php
@@ -206,6 +218,12 @@ class Log_Manager_Log_Table extends WP_List_Table
 		$per_page = 10;
 		$current_page = $this->get_pagenum();
 
+		if (!empty($_POST['reset_filters'])) {
+			$_POST = [];
+			wp_redirect(admin_url('admin.php?page=' . esc_attr($_REQUEST['page'])));
+			exit;
+		}
+
 		$this->items = $this->get_logs($per_page, $current_page);
 		$this->set_pagination_args([
 			'total_items' => $this->get_total_items(),
@@ -232,15 +250,14 @@ class Log_Manager_Log_Table extends WP_List_Table
 		$offset = ($page - 1) * $per_page;
 
 		$allowed_orderby = ['id', 'event_time', 'severity', 'event_type', 'object_type'];
-		$orderby = in_array($_GET['orderby'] ?? '', $allowed_orderby, true) ? $_GET['orderby'] : 'id';
-		$order = (!empty($_GET['order']) && $_GET['order'] === 'asc') ? 'ASC' : 'DESC';
+		$orderby = in_array($_POST['orderby'] ?? '', $allowed_orderby, true) ? $_POST['orderby'] : 'id';
+		$order = (!empty($_POST['order']) && $_POST['order'] === 'asc') ? 'ASC' : 'DESC';
 
 		$where = [];
 		$values = [];
 
-		// Search
-		if (!empty($_GET['s'])) {
-			$like = '%' . $wpdb->esc_like($_GET['s']) . '%';
+		if (!empty($_POST['s'])) {
+			$like = '%' . $wpdb->esc_like($_POST['s']) . '%';
 			$where[] = "(ip_address LIKE %s 
 						OR event_type LIKE %s 
 						OR object_type LIKE %s 
@@ -249,32 +266,28 @@ class Log_Manager_Log_Table extends WP_List_Table
 			array_push($values, $like, $like, $like, $like, $like);
 		}
 
-		// Date filter
-		if (!empty($_GET['start_date'])) {
+		if (!empty($_POST['start_date'])) {
 			$where[] = "event_time >= %s";
-			$values[] = str_replace('-', '/', $_GET['start_date']);
+			$values[] = str_replace('-', '/', $_POST['start_date']);
 		}
 
-		if (!empty($_GET['end_date'])) {
+		if (!empty($_POST['end_date'])) {
 			$where[] = "event_time <= %s";
-			$values[] = str_replace('-', '/', $_GET['end_date']);
+			$values[] = str_replace('-', '/', $_POST['end_date']);
 		}
 
-		// User filter
-		if (!empty($_GET['user_id'])) {
+		if (!empty($_POST['user_id'])) {
 			$where[] = "userid = %d";
-			$values[] = absint($_GET['user_id']);
+			$values[] = absint($_POST['user_id']);
 		}
 
-		// Severity filter
-		if (!empty($_GET['severity'])) {
+		if (!empty($_POST['severity'])) {
 			$where[] = "severity = %s";
-			$values[] = $_GET['severity'];
+			$values[] = $_POST['severity'];
 		}
 
-		// Role filter
-		if (!empty($_GET['role'])) {
-			$user_ids = get_users(['role' => $_GET['role'], 'fields' => 'ID']);
+		if (!empty($_POST['role'])) {
+			$user_ids = get_users(['role' => $_POST['role'], 'fields' => 'ID']);
 			if (!empty($user_ids)) {
 				$where[] = 'userid IN (' . implode(',', array_map('absint', $user_ids)) . ')';
 			} else {
@@ -303,8 +316,8 @@ class Log_Manager_Log_Table extends WP_List_Table
 		$where = [];
 		$values = [];
 
-		if (!empty($_GET['s'])) {
-			$like = '%' . $wpdb->esc_like($_GET['s']) . '%';
+		if (!empty($_POST['s'])) {
+			$like = '%' . $wpdb->esc_like($_POST['s']) . '%';
 			$where[] = "(ip_address LIKE %s 
 						OR event_type LIKE %s 
 						OR object_type LIKE %s 
@@ -313,32 +326,28 @@ class Log_Manager_Log_Table extends WP_List_Table
 			array_push($values, $like, $like, $like, $like, $like);
 		}
 
-		// Date filter
-		if (!empty($_GET['start_date'])) {
+		if (!empty($_POST['start_date'])) {
 			$where[] = "event_time >= %s";
-			$values[] = str_replace('-', '/', $_GET['start_date']);
+			$values[] = str_replace('-', '/', $_POST['start_date']);
 		}
 
-		if (!empty($_GET['end_date'])) {
+		if (!empty($_POST['end_date'])) {
 			$where[] = "event_time <= %s";
-			$values[] = str_replace('-', '/', $_GET['end_date']);
+			$values[] = str_replace('-', '/', $_POST['end_date']);
 		}
 
-		// User filter
-		if (!empty($_GET['user_id'])) {
+		if (!empty($_POST['user_id'])) {
 			$where[] = "userid = %d";
-			$values[] = absint($_GET['user_id']);
+			$values[] = absint($_POST['user_id']);
 		}
 
-		// Severity filter
-		if (!empty($_GET['severity'])) {
+		if (!empty($_POST['severity'])) {
 			$where[] = "severity = %s";
-			$values[] = $_GET['severity'];
+			$values[] = $_POST['severity'];
 		}
 
-		// Role filter
-		if (!empty($_GET['role'])) {
-			$user_ids = get_users(['role' => $_GET['role'], 'fields' => 'ID']);
+		if (!empty($_POST['role'])) {
+			$user_ids = get_users(['role' => $_POST['role'], 'fields' => 'ID']);
 			if (!empty($user_ids)) {
 				$where[] = 'userid IN (' . implode(',', array_map('absint', $user_ids)) . ')';
 			} else {
@@ -371,6 +380,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 	{
 		if (empty($item['userid']))
 			return '<em>Guest</em>';
+
 		$user = get_userdata(absint($item['userid']));
 		if (!$user)
 			return '<em>User deleted</em>';
@@ -418,7 +428,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 /**
  * Dashboard Renderer class
  * 
- * @since 1.0.0
+ * @since 1.0.1
  * @package Log_Manager
  * 
  */
@@ -482,7 +492,7 @@ class Log_Manager_Dashboard
 		<div class="wrap">
 			<h1 class="wp-heading-inline">Log Manager Dashboard</h1>
 
-			<form method="get">
+			<form method="post">
 				<input type="hidden" name="page" value="<?php echo esc_attr($_REQUEST['page']); ?>" />
 				<?php
 				$table->search_box('Search Logs', 'log-search');
@@ -509,27 +519,18 @@ class Log_Manager_Dashboard
  *
  * @return void
  */
-function log_manager_export_csv_handler()
+function sdw_log_manager_export_csv_handler()
 {
-
 	// Only run in admin area
 	if (!is_admin()) {
 		return;
 	}
 
-	// Check if export is triggered
-	if (
-		empty($_GET['export_action']) ||
-		empty($_GET['export_type']) ||
-		$_GET['export_type'] !== 'csv'
-	) {
+	if (!is_admin() || empty($_POST['export_csv']))
 		return;
-	}
 
-	// Ensure current user has permission
-	if (!current_user_can('manage_options')) {
+	if (!current_user_can('manage_options'))
 		return;
-	}
 
 	global $wpdb;
 	$table = $wpdb->prefix . 'event_db';
@@ -537,109 +538,62 @@ function log_manager_export_csv_handler()
 	$where = [];
 	$values = [];
 
-	/**
-	 * Search filter
-	 */
-	if (!empty($_GET['s'])) {
-		$like = '%' . $wpdb->esc_like($_GET['s']) . '%';
-		$where[] = "(ip_address LIKE %s 
-                    OR event_type LIKE %s 
-                    OR object_type LIKE %s 
-                    OR message LIKE %s
-                    OR severity LIKE %s)";
-		array_push($values, $like, $like, $like, $like, $like);
+	if (!empty($_POST['s'])) {
+		$like = '%' . $wpdb->esc_like($_POST['s']) . '%';
+		$where[] = "(ip_address LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR message LIKE %s OR severity LIKE %s)";
+		$values = array_merge($values, [$like, $like, $like, $like, $like]);
 	}
 
-	/**
-	 * Date filters
-	 */
-	if (!empty($_GET['start_date'])) {
+	if (!empty($_POST['start_date'])) {
 		$where[] = "event_time >= %s";
-		$values[] = str_replace('-', '/', $_GET['start_date']);
+		$values[] = $_POST['start_date'] . ' 00:00:00';
 	}
 
-	if (!empty($_GET['end_date'])) {
+	if (!empty($_POST['end_date'])) {
 		$where[] = "event_time <= %s";
-		$values[] = str_replace('-', '/', $_GET['end_date']);
+		$values[] = $_POST['end_date'] . ' 23:59:59';
 	}
 
-	/**
-	 * User filter
-	 */
-	if (!empty($_GET['user_id'])) {
+	if (!empty($_POST['user_id'])) {
 		$where[] = "userid = %d";
-		$values[] = absint($_GET['user_id']);
+		$values[] = absint($_POST['user_id']);
 	}
 
-	/**
-	 * Severity filter
-	 */
-	if (!empty($_GET['severity'])) {
+	if (!empty($_POST['severity'])) {
 		$where[] = "severity = %s";
-		$values[] = sanitize_text_field($_GET['severity']);
+		$values[] = sanitize_text_field($_POST['severity']);
 	}
 
-	/**
-	 * Role filter
-	 */
-	if (!empty($_GET['role'])) {
-		$user_ids = get_users([
-			'role' => sanitize_text_field($_GET['role']),
-			'fields' => 'ID',
-		]);
-
+	if (!empty($_POST['role'])) {
+		$user_ids = get_users(['role' => sanitize_text_field($_POST['role']), 'fields' => 'ID']);
 		if (!empty($user_ids)) {
 			$where[] = 'userid IN (' . implode(',', array_map('absint', $user_ids)) . ')';
 		} else {
-			$where[] = '1=0'; // No users with this role
+			$where[] = '1=0';
 		}
+	}
+
+	if (!empty($_POST['id']) && is_array($_POST['id'])) {
+		$placeholders = implode(',', array_fill(0, count($_POST['id']), '%d'));
+		$where[] = "id IN ($placeholders)";
+		$values = array_merge($values, array_map('absint', $_POST['id']));
 	}
 
 	$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 	$sql = "SELECT * FROM $table $where_sql ORDER BY id DESC";
+	$results = $values ? $wpdb->get_results($wpdb->prepare($sql, $values), ARRAY_A) : $wpdb->get_results($sql, ARRAY_A);
 
-	$results = $values
-		? $wpdb->get_results($wpdb->prepare($sql, $values), ARRAY_A)
-		: $wpdb->get_results($sql, ARRAY_A);
-
-	// Set headers for CSV download
 	header('Content-Type: text/csv; charset=utf-8');
 	header('Content-Disposition: attachment; filename=log-manager-' . date('Y-m-d') . '.csv');
-	header('Pragma: no-cache');
-	header('Expires: 0');
-
 	$output = fopen('php://output', 'w');
-
-	// Column headers
-	fputcsv($output, [
-		'ID',
-		'User ID',
-		'IP Address',
-		'Date',
-		'Severity',
-		'Event Type',
-		'Object Type',
-		'Message',
-	]);
-
-	// Export rows
+	fputcsv($output, ['ID', 'User ID', 'IP Address', 'Date', 'Severity', 'Event Type', 'Object Type', 'Message']);
 	foreach ($results as $row) {
-		fputcsv($output, [
-			$row['id'],
-			$row['userid'],
-			$row['ip_address'],
-			$row['event_time'],
-			$row['severity'],
-			$row['event_type'],
-			$row['object_type'],
-			wp_strip_all_tags($row['message']),
-		]);
+		fputcsv($output, [$row['id'], $row['userid'], $row['ip_address'], $row['event_time'], $row['severity'], $row['event_type'], $row['object_type'], wp_strip_all_tags($row['message'])]);
 	}
-
 	fclose($output);
 	exit;
 }
-add_action('admin_init', 'log_manager_export_csv_handler');
+add_action('admin_init', 'sdw_log_manager_export_csv_handler');
 
 
 /**
@@ -650,17 +604,17 @@ add_action('admin_init', 'log_manager_export_csv_handler');
  * - Exports all matching logs (not limited by pagination).
  * - Generates PDF using mPDF and forces file download.
  *
- * @since 1.0.0
+ * @since 1.0.1
  * @package Log_Manager
  */
 use Mpdf\Mpdf;
-function log_manager_export_pdf_handler()
+function sdw_log_manager_export_pdf_handler()
 {
 	if (!is_admin()) {
 		return;
 	}
 
-	if (empty($_GET['export_action']) || ($_GET['export_type'] ?? '') !== 'pdf') {
+	if (empty($_POST['export_pdf'])) {
 		return;
 	}
 
@@ -674,9 +628,8 @@ function log_manager_export_pdf_handler()
 	$where = [];
 	$values = [];
 
-	/* ---------- SEARCH ---------- */
-	if (!empty($_GET['s'])) {
-		$like = '%' . $wpdb->esc_like($_GET['s']) . '%';
+	if (!empty($_POST['s'])) {
+		$like = '%' . $wpdb->esc_like($_POST['s']) . '%';
 		$where[] = "(ip_address LIKE %s 
 					OR event_type LIKE %s 
 					OR object_type LIKE %s 
@@ -685,33 +638,29 @@ function log_manager_export_pdf_handler()
 		array_push($values, $like, $like, $like, $like, $like);
 	}
 
-	/* ---------- DATE FILTER ---------- */
-	if (!empty($_GET['start_date'])) {
+	if (!empty($_POST['start_date'])) {
 		$where[] = "event_time >= %s";
-		$values[] = $_GET['start_date'] . ' 00:00:00';
+		$values[] = $_POST['start_date'] . ' 00:00:00';
 	}
 
-	if (!empty($_GET['end_date'])) {
+	if (!empty($_POST['end_date'])) {
 		$where[] = "event_time <= %s";
-		$values[] = $_GET['end_date'] . ' 23:59:59';
+		$values[] = $_POST['end_date'] . ' 23:59:59';
 	}
 
-	/* ---------- USER FILTER ---------- */
-	if (!empty($_GET['user_id'])) {
+	if (!empty($_POST['user_id'])) {
 		$where[] = "userid = %d";
-		$values[] = absint($_GET['user_id']);
+		$values[] = absint($_POST['user_id']);
 	}
 
-	/* ---------- SEVERITY ---------- */
-	if (!empty($_GET['severity'])) {
+	if (!empty($_POST['severity'])) {
 		$where[] = "severity = %s";
-		$values[] = sanitize_text_field($_GET['severity']);
+		$values[] = sanitize_text_field($_POST['severity']);
 	}
 
-	/* ---------- ROLE ---------- */
-	if (!empty($_GET['role'])) {
+	if (!empty($_POST['role'])) {
 		$user_ids = get_users([
-			'role' => sanitize_text_field($_GET['role']),
+			'role' => sanitize_text_field($_POST['role']),
 			'fields' => 'ID',
 		]);
 
@@ -722,8 +671,16 @@ function log_manager_export_pdf_handler()
 		}
 	}
 
+	if (!empty($_POST['id']) && is_array($_POST['id'])) {
+		$placeholders = implode(',', array_fill(0, count($_POST['id']), '%d'));
+		$where[] = "id IN ($placeholders)";
+		$values = array_merge($values, array_map('absint', $_POST['id']));
+	}
+
 	$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-	$sql = "SELECT * FROM $table $where_sql ORDER BY event_time DESC";
+	// $sql = "SELECT * FROM $table $where_sql ORDER BY event_time DESC";
+	$sql = "SELECT * FROM $table $where_sql ORDER BY id DESC";
+
 
 	$logs = $values
 		? $wpdb->get_results($wpdb->prepare($sql, $values), ARRAY_A)
@@ -812,5 +769,5 @@ function log_manager_export_pdf_handler()
 	);
 	exit;
 }
-add_action('admin_init', 'log_manager_export_pdf_handler');
+add_action('admin_init', 'sdw_log_manager_export_pdf_handler');
 

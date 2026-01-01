@@ -5,7 +5,7 @@
  * Handles logging of user authentication events such as
  * login success, login failure, and logout.
  * 
- * @since 1.0.0
+ * @since 1.0.1
  * @package Log_Manager
  */
 
@@ -72,7 +72,7 @@ class Log_Manager_User_Hooks
      * exists but an incorrect password is provided. It records
      * user details along with severity level set to warning.
      *
-     * @since 1.0.0
+     * @since 1.0.1
      *
      * @param string $username Username used during the failed login attempt.
      *

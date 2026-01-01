@@ -4,7 +4,7 @@
  * Main Plugin Class File
  * 
  * 
- * @since 1.0.0
+ * @since 1.0.1
  * @package Log_Manager
  */
 
@@ -16,7 +16,7 @@ class Log_Manager
      *
      * Loads all plugin dependencies on plugin initialization.
      *
-     * @since 1.0.0
+     * @since 1.0.1
      */
     public function __construct()
     {
@@ -29,7 +29,7 @@ class Log_Manager
      * Includes all class files required to run the plugin 
      * such as admin, dashboard, database, and post hooks.
      *
-     * @since 1.0.0
+     * @since 1.0.1
      * @return void
      */
     private function load_dependencies()
@@ -47,7 +47,7 @@ class Log_Manager
      * Creates instances of all core plugin classes
      * and registers their hooks with WordPress.
      *
-     * @since 1.0.0
+     * @since 1.0.1
      * @return void
      */
     public function initialize()
