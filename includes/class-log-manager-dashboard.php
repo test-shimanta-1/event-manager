@@ -409,19 +409,37 @@ class Log_Manager_Log_Table extends WP_List_Table
 	public function column_default($item, $column_name)
 	{
 		if ($column_name === 'message') {
-			$full_message = $item['message'];
-			$short = mb_substr(wp_strip_all_tags($full_message), 0, 20);
-			if (mb_strlen(wp_strip_all_tags($full_message)) <= 20)
-				return esc_html($short);
+
+			$short = mb_substr(wp_strip_all_tags($item['message']), 0, 30);
+
 			return sprintf(
-				'<span class="bxft-short">%s...</span>
-                 <span class="bxft-full" style="display:none;">%s</span>
-                 <a href="#" class="bxft-read-more">Read more</a>',
+				'<span>%s...</span>
+             <a href="#" 
+                class="lm-view-log"
+                data-id="%d"
+                data-user="%s"
+                data-ip="%s"
+                data-date="%s"
+                data-severity="%s"
+                data-event="%s"
+                data-object="%s"
+                data-message="%s">
+                View details
+             </a>',
 				esc_html($short),
-				wp_kses_post($full_message)
+				absint($item['id']),
+				esc_attr($item['userid'] ?: 'Guest'),
+				esc_attr($item['ip_address']),
+				esc_attr($item['event_time']),
+				esc_attr(ucfirst($item['severity'])),
+				esc_attr($item['event_type']),
+				esc_attr($item['object_type']),
+				esc_attr(wp_strip_all_tags($item['message']))
 			);
 		}
+
 		return esc_html($item[$column_name] ?? '—');
+
 	}
 }
 
@@ -469,24 +487,27 @@ class Log_Manager_Dashboard
 
 		<script>
 			document.addEventListener('click', function (e) {
-				if (e.target.classList.contains('bxft-read-more')) {
+				if (e.target.classList.contains('lm-view-log')) {
 					e.preventDefault();
+					const btn = e.target;
 
-					const link = e.target;
-					const shortText = link.previousElementSibling.previousElementSibling;
-					const fullText = link.previousElementSibling;
+					document.getElementById('lm-id').textContent = btn.dataset.id;
+					document.getElementById('lm-user').textContent = btn.dataset.user;
+					document.getElementById('lm-ip').textContent = btn.dataset.ip;
+					document.getElementById('lm-date').textContent = btn.dataset.date;
+					document.getElementById('lm-severity').textContent = btn.dataset.severity;
+					document.getElementById('lm-event').textContent = btn.dataset.event;
+					document.getElementById('lm-object').textContent = btn.dataset.object;
+					document.getElementById('lm-message').textContent = btn.dataset.message;
 
-					if (fullText.style.display === 'none') {
-						shortText.style.display = 'none';
-						fullText.style.display = 'inline';
-						link.textContent = 'Read less';
-					} else {
-						shortText.style.display = 'inline';
-						fullText.style.display = 'none';
-						link.textContent = 'Read more';
-					}
+					document.getElementById('lm-log-modal').style.display = 'block';
+				}
+
+				if (e.target.classList.contains('lm-close') || e.target.id === 'lm-log-modal') {
+					document.getElementById('lm-log-modal').style.display = 'none';
 				}
 			});
+
 		</script>
 
 		<div class="wrap">
@@ -507,6 +528,75 @@ class Log_Manager_Dashboard
 				$table->display();
 				?>
 			</form>
+
+			<div id="lm-log-modal" style="display:none;">
+				<div class="lm-modal-content">
+					<span class="lm-close">&times;</span>
+					<h2>Log Details</h2>
+
+					<table class="widefat striped">
+						<tr>
+							<th>ID</th>
+							<td id="lm-id"></td>
+						</tr>
+						<tr>
+							<th>User</th>
+							<td id="lm-user"></td>
+						</tr>
+						<tr>
+							<th>IP Address</th>
+							<td id="lm-ip"></td>
+						</tr>
+						<tr>
+							<th>Date</th>
+							<td id="lm-date"></td>
+						</tr>
+						<tr>
+							<th>Severity</th>
+							<td id="lm-severity"></td>
+						</tr>
+						<tr>
+							<th>Event Type</th>
+							<td id="lm-event"></td>
+						</tr>
+						<tr>
+							<th>Object Type</th>
+							<td id="lm-object"></td>
+						</tr>
+						<tr>
+							<th>Message</th>
+							<td id="lm-message"></td>
+						</tr>
+					</table>
+				</div>
+			</div>
+
+			<style>
+				#lm-log-modal {
+					position: fixed;
+					inset: 0;
+					background: rgba(0, 0, 0, 0.6);
+					z-index: 9999;
+				}
+
+				.lm-modal-content {
+					background: #fff;
+					width: 70%;
+					margin: 5% auto;
+					padding: 20px;
+					border-radius: 6px;
+					position: relative;
+				}
+
+				.lm-close {
+					position: absolute;
+					right: 15px;
+					top: 10px;
+					font-size: 22px;
+					cursor: pointer;
+				}
+			</style>
+
 		</div>
 		<?php
 	}
@@ -678,9 +768,7 @@ function sdw_log_manager_export_pdf_handler()
 	}
 
 	$where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-	// $sql = "SELECT * FROM $table $where_sql ORDER BY event_time DESC";
 	$sql = "SELECT * FROM $table $where_sql ORDER BY id DESC";
-
 
 	$logs = $values
 		? $wpdb->get_results($wpdb->prepare($sql, $values), ARRAY_A)
