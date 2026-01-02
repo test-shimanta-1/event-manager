@@ -24,9 +24,9 @@ class Log_Manager_DB
                     userid varchar(200) NOT NULL,
                     severity ENUM('info', 'notice', 'warning', 'error', 'critical', 'bug') NOT NULL,
                     ip_address varchar(15) NOT NULL,
-                    event_type ENUM( 'created','modified','trashed','restored','deleted','logged-in','login-failed','logout','published') NOT NULL,
+                    event_type ENUM( 'created','modified','trashed','restored','deleted','logged-in','login-failed','logout','published', 'assigned') NOT NULL,
                     event_time varchar(10) NOT NULL,
-                    object_type ENUM('Post', 'User', 'Media') NOT NULL,
+                    object_type ENUM('Post', 'User', 'Media', 'Taxonomy') NOT NULL,
                     message varchar(1000) NOT NULL,
                     UNIQUE KEY id (id)
             ) $charset_collate;";
