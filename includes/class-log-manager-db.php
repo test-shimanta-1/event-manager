@@ -16,7 +16,7 @@ class Log_Manager_DB
     public static function init_db()
     {
         global $wpdb;
-        $db_table_name = $wpdb->prefix . 'event_db';
+        $db_table_name = $wpdb->prefix . 'log_db';
         $charset_collate = $wpdb->get_charset_collate();
         if ($wpdb->get_var("show tables like '$db_table_name'") != $db_table_name) {
             $sql = "CREATE TABLE $db_table_name (

@@ -169,7 +169,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 	public function process_bulk_action()
 	{
 		global $wpdb;
-		$table = $wpdb->prefix . 'event_db';
+		$table = $wpdb->prefix . 'log_db';
 
 		if ($this->current_action() !== 'delete')
 			return;
@@ -246,7 +246,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 	private function get_logs($per_page, $page)
 	{
 		global $wpdb;
-		$table = $wpdb->prefix . 'event_db';
+		$table = $wpdb->prefix . 'log_db';
 		$offset = ($page - 1) * $per_page;
 
 		$allowed_orderby = ['id', 'event_time', 'severity', 'event_type', 'object_type'];
@@ -312,7 +312,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 	private function get_total_items()
 	{
 		global $wpdb;
-		$table = $wpdb->prefix . 'event_db';
+		$table = $wpdb->prefix . 'log_db';
 		$where = [];
 		$values = [];
 
@@ -670,7 +670,7 @@ function sdw_log_manager_export_csv_handler()
 		return;
 
 	global $wpdb;
-	$table = $wpdb->prefix . 'event_db';
+	$table = $wpdb->prefix . 'log_db';
 
 	$where = [];
 	$values = [];
@@ -760,7 +760,7 @@ function sdw_log_manager_export_pdf_handler()
 	}
 
 	global $wpdb;
-	$table = $wpdb->prefix . 'event_db';
+	$table = $wpdb->prefix . 'log_db';
 
 	$where = [];
 	$values = [];

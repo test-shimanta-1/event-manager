@@ -45,24 +45,34 @@ class Log_Manager_User_Hooks
      */
     public function sdw_log_successful_login($cookie, $expire, $expiration, $user_id)
     {
-        global $wpdb;
-        $table = $wpdb->prefix . 'event_db';
+        // global $wpdb;
+        // $table = $wpdb->prefix . 'log_db';
 
         $user_info = get_userdata($user_id);
         $user_role = implode(', ', $user_info->roles);
 
-        $wpdb->insert(
-            $table,
-            [
+        // $wpdb->insert(
+        //     $table,
+        //     [
+        //         'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
+        //         'userid' => $user_id,
+        //         'event_time' => date("Y/m/d"),
+        //         'object_type' => 'User',
+        //         'severity' => 'info',
+        //         'event_type' => 'logged-in',
+        //         'message' => 'Login successful' . '<br/>User Id: <b>' . $user_id . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
+        //     ]
+        // );
+
+        Log_Manager_Logger::insert([
                 'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
                 'userid' => $user_id,
-                'event_time' => date("Y/m/d"),
+                'event_time' => date('Y/m/d H:i:s'),
                 'object_type' => 'User',
                 'severity' => 'info',
                 'event_type' => 'logged-in',
                 'message' => 'Login successful' . '<br/>User Id: <b>' . $user_id . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
-            ]
-        );
+            ]);
     }
 
     /**
@@ -86,7 +96,7 @@ class Log_Manager_User_Hooks
             $user_role = implode(', ', $user_info->roles);
 
             global $wpdb;
-            $table = $wpdb->prefix . 'event_db';
+            $table = $wpdb->prefix . 'log_db';
             $wpdb->insert(
                 $table,
                 [
@@ -118,7 +128,7 @@ class Log_Manager_User_Hooks
     {
         if ($user_id) {
             global $wpdb;
-            $table = $wpdb->prefix . 'event_db';
+            $table = $wpdb->prefix . 'log_db';
             $user_info = get_userdata($user_id);
             $user_role = implode(', ', $user_info->roles);
             $wpdb->insert(

@@ -7,4 +7,4 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 
 // drop a custom database table
 global $wpdb;
-$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}event_db");
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}log_db");

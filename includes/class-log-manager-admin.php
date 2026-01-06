@@ -3,7 +3,7 @@
  * Plugin Admin Class File
  * 
  * 
- * @since 1.0.1
+ * @since 1.0.2
  * @package Log_Manager
  */
 
@@ -43,11 +43,21 @@ class Log_Manager_Admin
     // Dashboard submenu
     add_submenu_page(
       'log-manager',
-      __('Dashboard', 'log-manager'),
-      __('Dashboard', 'log-manager'),
+      'Dashboard',
+      'Dashboard',
       'manage_options',
       'log-manager',
       ['Log_Manager_Dashboard', 'sdw_dashboard_render']
+    );
+
+    // Settings submenu
+    add_submenu_page(
+      'log-manager',
+      'Settings',
+      'Settings',
+      'manage_options',
+      'log-manager-settings',
+      ['Log_Manager_Settings', 'sdw_log_manager_settings_render']
     );
 
   }

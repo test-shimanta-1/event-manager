@@ -6,7 +6,6 @@
  * @since 1.0.1
  * @package Log_Manager
  */
-
 class Log_Manager_Post_Hooks
 {
 
@@ -88,7 +87,7 @@ class Log_Manager_Post_Hooks
         }
 
         global $wpdb;
-        $table = $wpdb->prefix . 'event_db';
+        $table = $wpdb->prefix . 'log_db';
 
         $user_id = get_current_user_id();
         $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
@@ -104,33 +103,26 @@ class Log_Manager_Post_Hooks
          * 1. Restore from trash
          */
         if ($old_status === 'trash' && $new_status !== 'trash') {
-
             $event_type = 'restored';
             $message = 'Post has been restored.';
-
-            /**
-             * 2. Move to trash
-             */
-        } elseif ($new_status === 'trash') {
-
+        }
+        /**
+         * 2. Move to trash
+         */ elseif ($new_status === 'trash') {
             $event_type = 'trashed';
             $message = 'Post has been moved to trash.';
-
-            /**
-             * 3. New post created
-             */
-        } elseif ($old_status === 'auto-draft' && $new_status !== 'auto-draft') {
-
+        }
+        /**
+         * 3. New post created
+         */ elseif ($old_status === 'auto-draft' && $new_status !== 'auto-draft') {
             $event_type = 'created';
             $message = 'New post has been created.';
-
-            /**
-             * 4. Any other status change (draft → publish, publish → private, etc.)
-             */
-        } elseif ($old_status !== $new_status) {
+        }
+        /**
+         * 4. Any other status change (draft → publish, publish → private, etc.)
+         */ elseif ($old_status !== $new_status) {
 
             $event_type = 'modified';
-
             if ($new_status === 'publish' && $old_status !== 'publish') {
                 $message = 'Post has been published.';
             } elseif ($new_status === 'private') {
@@ -142,12 +134,10 @@ class Log_Manager_Post_Hooks
                     esc_html($new_status)
                 );
             }
-
-            /**
-             * 5. Post content updated (same status)
-             */
-        } else {
-
+        }
+        /**
+         * 5. Post content updated (same status)
+         */ else {
             $event_type = 'modified';
             $message = 'Post content has been updated.';
         }
@@ -167,19 +157,15 @@ class Log_Manager_Post_Hooks
         }
 
         // Insert log entry
-        $wpdb->insert(
-            $table,
-            [
-                'ip_address' => $ip,
-                'userid' => $user_id,
-                'event_time' => $time,
-                'object_type' => 'Post',
-                'severity' => $severity,
-                'event_type' => $event_type,
-                'message' => $message,
-            ]
-        );
-
+        Log_Manager_Logger::insert([
+            'ip_address' => $ip,
+            'userid' => $user_id,
+            'event_time' => $time,
+            'object_type' => 'Post',
+            'severity' => $severity,
+            'event_type' => $event_type,
+            'message' => $message,
+        ]);
     }
 
     /**
@@ -200,7 +186,7 @@ class Log_Manager_Post_Hooks
         }
 
         global $wpdb;
-        $table = $wpdb->prefix . 'event_db';
+        $table = $wpdb->prefix . 'log_db';
         $wpdb->insert(
             $table,
             [
@@ -235,7 +221,7 @@ class Log_Manager_Post_Hooks
         $term_link = get_edit_term_link($term_id, $taxonomy);
 
         global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'event_db', [
+        $wpdb->insert($wpdb->prefix . 'log_db', [
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
             'event_time' => date('Y/m/d'),
@@ -351,7 +337,7 @@ class Log_Manager_Post_Hooks
         }
 
         global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'event_db', [
+        $wpdb->insert($wpdb->prefix . 'log_db', [
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
             'event_time' => date('Y/m/d'),
@@ -396,7 +382,7 @@ class Log_Manager_Post_Hooks
             return;
 
         global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'event_db', [
+        $wpdb->insert($wpdb->prefix . 'log_db', [
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
             'event_time' => date('Y/m/d'),
@@ -437,7 +423,7 @@ class Log_Manager_Post_Hooks
             return;
 
         global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'event_db', [
+        $wpdb->insert($wpdb->prefix . 'log_db', [
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
             'event_time' => date('Y/m/d'),
@@ -534,7 +520,7 @@ class Log_Manager_Post_Hooks
         }
 
         global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'event_db', [
+        $wpdb->insert($wpdb->prefix . 'log_db', [
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
             'event_time' => date('Y/m/d'),
