@@ -215,7 +215,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 	{
 		$this->process_bulk_action();
 
-		$per_page = 10;
+		$per_page = $this->get_items_per_page('logs_per_page', 10);
 		$current_page = $this->get_pagenum();
 
 		if (!empty($_POST['reset_filters'])) {
@@ -439,7 +439,6 @@ class Log_Manager_Log_Table extends WP_List_Table
 		}
 
 		return esc_html($item[$column_name] ?? '—');
-
 	}
 }
 
@@ -453,8 +452,55 @@ class Log_Manager_Log_Table extends WP_List_Table
 class Log_Manager_Dashboard
 {
 	/**
+	 * Constructor.
+	 *
+	 * Registers screen options for Log Manager pagination.
+	 *
+	 * @since 1.0.1
+	 * @return void
+	 */
+	public function __construct() {
+		add_action('load-toplevel_page_log-manager', [$this,'sdw_log_manager_screen_options']);
+		add_filter('set-screen-option', [$this,'sdw_log_manager_set_screen_option'], 10, 3);
+	}
+
+	/**
+	 * Adds "Logs per page" option to Screen Options.
+	 *
+	 * @since 1.0.1
+	 * @return void
+	 */
+	function sdw_log_manager_screen_options()
+	{
+		$option = 'per_page';
+
+		$args = [
+			'label'   => 'Logs per page',
+			'default' => 10,
+			'option'  => 'logs_per_page',
+		];
+
+		add_screen_option($option, $args);
+	}
+
+	/**
+	 * Saves screen option value.
+	 *
+	 * @since 1.0.1
+	 * @return void
+	 */
+	function sdw_log_manager_set_screen_option($status, $option, $value)
+	{
+		if ($option === 'logs_per_page') {
+			return (int) $value;
+		}
+		return $status;
+	}
+
+	/**
 	 * Dashboard UI including filters, table, styles, and scripts.
 	 * 
+	 * @since 1.0.0
 	 * @return void 
 	 */
 	public static function sdw_dashboard_render()
@@ -607,6 +653,7 @@ class Log_Manager_Dashboard
  * Handles Log Manager CSV export.
  * Exports all logs or filtered logs based on active filters.
  *
+ * @since 1.0.1
  * @return void
  */
 function sdw_log_manager_export_csv_handler()
