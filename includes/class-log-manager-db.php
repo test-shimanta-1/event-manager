@@ -25,7 +25,7 @@ class Log_Manager_DB
                     severity ENUM('info', 'notice', 'warning', 'error', 'critical', 'bug') NOT NULL,
                     ip_address varchar(15) NOT NULL,
                     event_type ENUM( 'created','modified','trashed','restored','deleted','logged-in','login-failed','logout','published', 'assigned') NOT NULL,
-                    event_time varchar(10) NOT NULL,
+                    event_time varchar(20) NOT NULL,
                     object_type ENUM('Post', 'User', 'Media', 'Taxonomy') NOT NULL,
                     message varchar(1000) NOT NULL,
                     UNIQUE KEY id (id)
