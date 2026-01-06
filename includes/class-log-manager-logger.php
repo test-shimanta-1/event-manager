@@ -15,7 +15,7 @@ class Log_Manager_Logger
     /**
      * Insert log data into the selected storage.
      *
-     * @since 1.0.1
+     * @since 1.0.2
      * @param array $data Log data to be stored.
      *
      * @return void
@@ -33,7 +33,7 @@ class Log_Manager_Logger
     /**
      * Write log data to the database.
      *
-     * @since 1.0.1
+     * @since 1.0.2
      * @param array $data Log data to be inserted.
      *
      * @return void
@@ -49,7 +49,7 @@ class Log_Manager_Logger
     /**
      * Write log data to a log file.
      *
-     * @since 1.0.1
+     * @since 1.0.2
      * @param array $data Log data to be written to file.
      *
      * @return void

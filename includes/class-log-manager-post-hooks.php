@@ -86,9 +86,6 @@ class Log_Manager_Post_Hooks
             $post_id = $post->post_parent;
         }
 
-        global $wpdb;
-        $table = $wpdb->prefix . 'log_db';
-
         $user_id = get_current_user_id();
         $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
         $time = date("Y/m/d");
@@ -185,11 +182,7 @@ class Log_Manager_Post_Hooks
             return;
         }
 
-        global $wpdb;
-        $table = $wpdb->prefix . 'log_db';
-        $wpdb->insert(
-            $table,
-            [
+        Log_Manager_Logger::insert([
                 'ip_address' => $_SERVER['REMOTE_ADDR'],
                 'userid' => get_current_user_id(),
                 'event_time' => date("Y/m/d"),
@@ -197,8 +190,7 @@ class Log_Manager_Post_Hooks
                 'severity' => 'notice',
                 'event_type' => 'deleted',
                 'message' => 'Permanently deleted the post. ' . '<br/>Post Title: <b>' . get_the_title($post->ID) . '</b><br> Post ID: <b>' . $post->ID . '</b> <br/>Post Type: <b>' . get_post_type($post->ID) . '</b>',
-            ]
-        );
+            ]);
     }
 
     /**
@@ -217,14 +209,12 @@ class Log_Manager_Post_Hooks
         if (!$term || is_wp_error($term)) {
             return;
         }
-
         $term_link = get_edit_term_link($term_id, $taxonomy);
 
-        global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'log_db', [
+        Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d'),
+            'event_time' => date('Y/m/d H:i:s'),
             'object_type' => 'Taxonomy',
             'severity' => 'notice',
             'event_type' => 'created',
@@ -336,11 +326,10 @@ class Log_Manager_Post_Hooks
             return;
         }
 
-        global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'log_db', [
+        Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d'),
+            'event_time' => date('Y/m/d H:i:s'),
             'object_type' => 'Taxonomy',
             'severity' => 'notice',
             'event_type' => 'modified',
@@ -381,11 +370,10 @@ class Log_Manager_Post_Hooks
         if (!$term)
             return;
 
-        global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'log_db', [
+        Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d'),
+            'event_time' => date('Y/m/d H:i:s'),
             'object_type' => 'Taxonomy',
             'severity' => 'warning',
             'event_type' => 'deleted',
@@ -422,16 +410,14 @@ class Log_Manager_Post_Hooks
         if (!$added && !$removed)
             return;
 
-        global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'log_db', [
+        Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d'),
+            'event_time' => date('Y/m/d H:i:s'),
             'object_type' => 'Taxonomy',
             'severity' => 'notice',
             'event_type' => 'assigned',
-            'message' =>
-                'Taxonomy terms updated on object ID <b>' . $object_id . '</b>',
+            'message' => 'Taxonomy terms updated on object ID <b>' . $object_id . '</b>',
         ]);
     }
 
@@ -483,7 +469,6 @@ class Log_Manager_Post_Hooks
         }
 
         $term_link = get_edit_term_link($term_id, $term->taxonomy);
-
         $new_fields = get_fields($post_id) ?: [];
         $old_fields = self::$before_term_update['acf_' . $term_id] ?? [];
 
@@ -492,9 +477,7 @@ class Log_Manager_Post_Hooks
         }
 
         $changes = [];
-
         foreach ($new_fields as $field_key => $new_value) {
-
             $old_value = $old_fields[$field_key] ?? null;
 
             if ($old_value == $new_value) {
@@ -503,7 +486,6 @@ class Log_Manager_Post_Hooks
 
             $field_object = get_field_object($field_key, $post_id);
             $label = $field_object['label'] ?? $field_key;
-
             $old = ($old_value === null || $old_value === '') ? '""' : esc_html(print_r($old_value, true));
             $new = ($new_value === null || $new_value === '') ? '""' : esc_html(print_r($new_value, true));
 
@@ -519,11 +501,10 @@ class Log_Manager_Post_Hooks
             return;
         }
 
-        global $wpdb;
-        $wpdb->insert($wpdb->prefix . 'log_db', [
+        Log_Manager_Logger::insert( [
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d'),
+            'event_time' => date('Y/m/d H:i:s'),
             'object_type' => 'Taxonomy',
             'severity' => 'notice',
             'event_type' => 'modified',

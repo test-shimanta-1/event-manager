@@ -5,7 +5,7 @@
  * Handles logging of user authentication events such as
  * login success, login failure, and logout.
  * 
- * @since 1.0.1
+ * @since 1.0.2
  * @package Log_Manager
  */
 
@@ -45,34 +45,18 @@ class Log_Manager_User_Hooks
      */
     public function sdw_log_successful_login($cookie, $expire, $expiration, $user_id)
     {
-        // global $wpdb;
-        // $table = $wpdb->prefix . 'log_db';
-
         $user_info = get_userdata($user_id);
         $user_role = implode(', ', $user_info->roles);
 
-        // $wpdb->insert(
-        //     $table,
-        //     [
-        //         'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
-        //         'userid' => $user_id,
-        //         'event_time' => date("Y/m/d"),
-        //         'object_type' => 'User',
-        //         'severity' => 'info',
-        //         'event_type' => 'logged-in',
-        //         'message' => 'Login successful' . '<br/>User Id: <b>' . $user_id . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
-        //     ]
-        // );
-
         Log_Manager_Logger::insert([
-                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
-                'userid' => $user_id,
-                'event_time' => date('Y/m/d H:i:s'),
-                'object_type' => 'User',
-                'severity' => 'info',
-                'event_type' => 'logged-in',
-                'message' => 'Login successful' . '<br/>User Id: <b>' . $user_id . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
-            ]);
+            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
+            'userid' => $user_id,
+            'event_time' => date('Y/m/d H:i:s'),
+            'object_type' => 'User',
+            'severity' => 'info',
+            'event_type' => 'logged-in',
+            'message' => 'Login successful' . '<br/>User Id: <b>' . $user_id . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
+        ]);
     }
 
     /**
@@ -95,20 +79,15 @@ class Log_Manager_User_Hooks
             $user_info = get_userdata($user->ID);
             $user_role = implode(', ', $user_info->roles);
 
-            global $wpdb;
-            $table = $wpdb->prefix . 'log_db';
-            $wpdb->insert(
-                $table,
-                [
-                    'ip_address' => $_SERVER['REMOTE_ADDR'],
-                    'userid' => $user->ID,
-                    'event_time' => date("Y/m/d"),
-                    'object_type' => 'User',
-                    'severity' => 'warning',
-                    'event_type' => 'login-failed',
-                    'message' => 'User login attempt failed' . '<br/>User Id: <b>' . $user->ID . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
-                ]
-            );
+            Log_Manager_Logger::insert([
+                'ip_address' => $_SERVER['REMOTE_ADDR'],
+                'userid' => $user->ID,
+                'event_time' => date('Y/m/d H:i:s'),
+                'object_type' => 'User',
+                'severity' => 'warning',
+                'event_type' => 'login-failed',
+                'message' => 'User login attempt failed' . '<br/>User Id: <b>' . $user->ID . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
+            ]);
         }
 
         return;
@@ -127,22 +106,18 @@ class Log_Manager_User_Hooks
     function sdw_log_user_logout($user_id)
     {
         if ($user_id) {
-            global $wpdb;
-            $table = $wpdb->prefix . 'log_db';
             $user_info = get_userdata($user_id);
             $user_role = implode(', ', $user_info->roles);
-            $wpdb->insert(
-                $table,
-                [
-                    'ip_address' => $_SERVER['REMOTE_ADDR'],
-                    'userid' => $user_id,
-                    'event_time' => date("Y/m/d"),
-                    'object_type' => 'User',
-                    'severity' => 'info',
-                    'event_type' => 'logout',
-                    'message' => 'User has been logged-out. ' . '<br/>User Id: <b>' . $user_id . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
-                ]
-            );
+
+            Log_Manager_Logger::insert([
+                'ip_address' => $_SERVER['REMOTE_ADDR'],
+                'userid' => $user_id,
+                'event_time' => date('Y/m/d H:i:s'),
+                'object_type' => 'User',
+                'severity' => 'info',
+                'event_type' => 'logout',
+                'message' => 'User has been logged-out. ' . '<br/>User Id: <b>' . $user_id . '</b><br/> User Role: <b>' . $user_role . '</b> <br/>User Email: <b>' . $user_info->user_email . '</b> <br/>Full Name: <b>' . $user_info->user_firstname . ' ' . $user_info->user_lastname . '</b>',
+            ]);
         }
         return;
     }
