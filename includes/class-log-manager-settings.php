@@ -85,7 +85,7 @@ class Log_Manager_Settings
                 <tr id="log-file-path-row">
                     <th>Text File Path</th>
                     <td>
-                        <input type="text" name="log_manager_file_path" value="<?php echo esc_attr($file_path); ?>" class="regular-text" placeholder="C:/logs/wp-log-manager.txt">
+                        <input type="text" name="log_manager_file_path" value="<?php echo esc_attr($file_path); ?>" class="regular-text" placeholder="Enter your folder path...">
                     </td>
                 </tr>
             </table>
