@@ -485,7 +485,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 				esc_attr(ucfirst($item['severity'])),
 				esc_attr($item['event_type']),
 				esc_attr($item['object_type']),
-				esc_attr(wp_strip_all_tags($item['message']))
+				esc_attr($item['message'])
 			);
 		}
 
@@ -596,7 +596,7 @@ class Log_Manager_Dashboard
 					document.getElementById('lm-severity').textContent = btn.dataset.severity;
 					document.getElementById('lm-event').textContent = btn.dataset.event;
 					document.getElementById('lm-object').textContent = btn.dataset.object;
-					document.getElementById('lm-message').textContent = btn.dataset.message;
+					document.getElementById('lm-message').innerHTML  = btn.dataset.message;
 
 					document.getElementById('lm-log-modal').style.display = 'block';
 				}
