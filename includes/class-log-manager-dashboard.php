@@ -28,6 +28,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 		return [
 			'cb' => '<input type="checkbox" />',
 			'userid' => 'User',
+			'user_email' => 'Email',
 			'ip_address' => 'IP Address',
 			'event_time' => 'Date',
 			'severity' => 'Severity',
@@ -36,6 +37,30 @@ class Log_Manager_Log_Table extends WP_List_Table
 			'message' => 'Message',
 		];
 	}
+
+	/**
+	 * Return the user's email
+	 * 
+	 * @return string
+	 */
+	public function column_user_email($item)
+	{
+		if (empty($item['userid'])) {
+			return '—';
+		}
+
+		$user = get_userdata(absint($item['userid']));
+		if (!$user) {
+			return '<em>User deleted</em>';
+		}
+
+		return sprintf(
+			'<a href="mailto:%1$s">%1$s</a>',
+			esc_html($user->user_email)
+		);
+	}
+
+
 
 	/**
 	 * Handels extra filters above the table.
@@ -378,28 +403,54 @@ class Log_Manager_Log_Table extends WP_List_Table
 	 */
 	public function column_userid($item)
 	{
-		if (empty($item['userid']))
+		// Guest
+		if (empty($item['userid'])) {
 			return '<em>Guest</em>';
+		}
 
 		$user = get_userdata(absint($item['userid']));
-		if (!$user)
-			return '<em>User deleted</em>';
 
-		$roles = !empty($user->roles) ? implode(', ', array_map('ucfirst', $user->roles)) : '—';
+		// Deleted user
+		if (!$user) {
+			return '<em>User deleted</em>';
+		}
+
+		$avatar = get_avatar($user->ID, 32);
+		$profile_url = admin_url('user-edit.php?user_id=' . absint($user->ID));
+		$display_name = $user->display_name;
+		$email = $user->user_email;
+		$username = $user->user_login;
+		$roles = !empty($user->roles)
+			? implode(', ', array_map('ucfirst', $user->roles))
+			: '—';
+
 		return sprintf(
-			'<span class="firstSpan">%s
-                <span class="secondSpan">
-                    <b>Username:</b> %s<br>
-                    <b>Email:</b> %s<br>
-                    <b>Nickname:</b> %s
-                </span>
-            </span>',
+			'<div class="lm-user-cell">
+			<a href="%s" class="lm-user-link">
+				<div class="lm-user-avatar">%s</div>
+				<div class="lm-user-meta">
+					<strong class="lm-user-name">%s</strong>
+					<div class="lm-user-role">%s</div>
+				</div>
+			</a>
+
+			<div class="lm-user-tooltip">
+				<b>Username:</b> %s<br>
+				<b>Email:</b> %s<br>
+				<b>Role:</b> %s
+			</div>
+		</div>',
+			esc_url($profile_url),
+			$avatar,
+			esc_html($display_name),
 			esc_html($roles),
-			esc_html($user->user_login),
-			esc_html($user->user_email),
-			esc_html($user->display_name)
+			esc_html($username),
+			esc_html($email),
+			esc_html($roles)
 		);
 	}
+
+
 
 	/**
 	 * Default column renderer, handles long messages with 'read more' toggle
@@ -439,8 +490,8 @@ class Log_Manager_Log_Table extends WP_List_Table
 		}
 
 		return esc_html($item[$column_name] ?? '—');
+		}
 	}
-}
 
 /**
  * Dashboard Renderer class
@@ -459,9 +510,10 @@ class Log_Manager_Dashboard
 	 * @since 1.0.1
 	 * @return void
 	 */
-	public function __construct() {
-		add_action('load-toplevel_page_log-manager', [$this,'sdw_log_manager_screen_options']);
-		add_filter('set-screen-option', [$this,'sdw_log_manager_set_screen_option'], 10, 3);
+	public function __construct()
+	{
+		add_action('load-toplevel_page_log-manager', [$this, 'sdw_log_manager_screen_options']);
+		add_filter('set-screen-option', [$this, 'sdw_log_manager_set_screen_option'], 10, 3);
 	}
 
 	/**
@@ -475,9 +527,9 @@ class Log_Manager_Dashboard
 		$option = 'per_page';
 
 		$args = [
-			'label'   => 'Logs per page',
+			'label' => 'Logs per page',
 			'default' => 10,
-			'option'  => 'logs_per_page',
+			'option' => 'logs_per_page',
 		];
 
 		add_screen_option($option, $args);
@@ -564,7 +616,6 @@ class Log_Manager_Dashboard
 				<?php
 				$table->search_box('Search Logs', 'log-search');
 
-				// triggers on log deletion
 				if ($table->current_action() === 'delete') {
 					echo '<div class="notice notice-success is-dismissible">
 							<p>Logs deleted successfully.</p>
@@ -640,6 +691,53 @@ class Log_Manager_Dashboard
 					top: 10px;
 					font-size: 22px;
 					cursor: pointer;
+				}
+
+				.lm-user-cell {
+					position: relative;
+					display: inline-block;
+				}
+
+				.lm-user-link {
+					display: flex;
+					gap: 10px;
+					align-items: center;
+					text-decoration: none;
+					color: inherit;
+				}
+
+				.lm-user-avatar img {
+					border-radius: 50%;
+				}
+
+				.lm-user-name {
+					color: #2271b1;
+				}
+
+				.lm-user-role {
+					font-size: 12px;
+					color: #666;
+				}
+
+				.lm-user-tooltip {
+					position: absolute;
+					top: 100%;
+					left: 0;
+					width: 260px;
+					background: #1e1e1e;
+					color: #fff;
+					padding: 10px;
+					border-radius: 6px;
+					font-size: 12px;
+					visibility: hidden;
+					opacity: 0;
+					transition: opacity 0.2s ease;
+					z-index: 999;
+				}
+
+				.lm-user-cell:hover .lm-user-tooltip {
+					visibility: visible;
+					opacity: 1;
 				}
 			</style>
 

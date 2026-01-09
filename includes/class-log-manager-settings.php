@@ -35,18 +35,20 @@ class Log_Manager_Settings
             'sanitize_callback' => 'sanitize_text_field',
             'default' => 'database',
         ]
-    );
+        );
 
-    register_setting(
-        'log_manager_settings',
-        'log_manager_file_path',
-        [
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => '',
-        ]
-    );
+        register_setting(
+            'log_manager_settings',
+            'log_manager_file_path',
+            [
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'default' => '',
+            ]
+        );
+
     }
+
 
     /**
      * Render Log Manager settings page.
@@ -105,7 +107,7 @@ class Log_Manager_Settings
             }
 
             radios.forEach(r => r.addEventListener('change', togglePath));
-            togglePath(); // on page load
+            togglePath();
         })();
     </script>
     <?php

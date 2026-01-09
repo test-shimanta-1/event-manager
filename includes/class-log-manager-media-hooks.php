@@ -118,8 +118,7 @@ class Log_Manager_Media_Hooks
             'object_type' => 'Media',
             'severity'    => 'critical',
             'event_type'  => 'deleted',
-            'message'     => 'Media permanently deleted'
-                . '<br/>Media ID: <b>' . $attachment_id . '</b>',
+            'message'     => 'Media permanently deleted' . '<br/>Media ID: <b>' . $attachment_id . '</b>',
         ]);
     }
 
