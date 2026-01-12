@@ -28,8 +28,6 @@ The plugin supports logging across:
 
 ---
 
----
-
 ## Important Note
 You need to set the value of upload_max_filesize and post_max_size in your php.ini
 - Maximum allowed size for uploaded files.

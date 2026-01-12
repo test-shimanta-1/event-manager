@@ -177,11 +177,9 @@ class Log_Manager_Settings
         $hook_name = 'log_manager_cleanup_hook';
 
         // Clear existing schedules
-        // wp_clear_scheduled_hook($hook_name);
         if (wp_next_scheduled($hook_name)) {
             wp_clear_scheduled_hook($hook_name);
         }
-
 
         // Schedule if enabled
         if ($enabled) {
@@ -345,93 +343,7 @@ class Log_Manager_Settings
      * @param string $time (HH:MM format)
      * @return void
      */
-    // private function schedule_interval_cleanup($hook_name, $interval, $time)
-    // {
-    //     list($hour, $minute) = explode(':', $time);
-
-    //     // Get WordPress timezone
-    //     $timezone = wp_timezone();
-    //     $current_datetime = new DateTime('now', $timezone);
-
-    //     // Handle custom_range differently
-    //     if ($interval === 'custom_range') {
-    //         $custom_days = get_option('log_manager_custom_days', 7);
-    //         $interval_seconds = $custom_days * DAY_IN_SECONDS;
-
-    //         $start_datetime = new DateTime("today {$hour}:{$minute}:00", $timezone);
-    //         if ($start_datetime <= $current_datetime) {
-    //             $start_datetime = new DateTime("tomorrow {$hour}:{$minute}:00", $timezone);
-    //         }
-
-    //         $start_timestamp = $start_datetime->getTimestamp();
-
-    //         // Create custom schedule
-    //         // add_filter('cron_schedules', function ($schedules) use ($interval_seconds, $custom_days) {
-    //         //     $schedules['log_manager_custom'] = [
-    //         //         'interval' => $interval_seconds,
-    //         //         'display' => sprintf(__('Every %d days'), $custom_days)
-    //         //     ];
-    //         //     return $schedules;
-    //         // });
-
-    //         wp_schedule_event($start_timestamp, 'log_manager_custom', $hook_name);
-    //         return;
-    //     }
-
-    //     // Handle weekly schedule
-    //     if ($interval === 'weekly') {
-    //         $weekly_day = get_option('log_manager_weekly_day', 'monday');
-    //         $next_day = new DateTime("next {$weekly_day} {$hour}:{$minute}:00", $timezone);
-
-    //         // If the calculated time is not in the future, move to next week
-    //         if ($next_day <= $current_datetime) {
-    //             $next_day->modify('+1 week');
-    //         }
-
-    //         $start_timestamp = $next_day->getTimestamp();
-    //         wp_schedule_event($start_timestamp, 'weekly', $hook_name);
-    //         return;
-    //     }
-
-    //     // Handle monthly schedule
-    //     if ($interval === 'monthly') {
-    //         $monthly_option = get_option('log_manager_monthly_option', 'first');
-
-    //         if ($monthly_option === 'first') {
-    //             $start_datetime = new DateTime("first day of next month {$hour}:{$minute}:00", $timezone);
-    //         } else {
-    //             $start_datetime = new DateTime("last day of this month {$hour}:{$minute}:00", $timezone);
-    //             if ($start_datetime <= $current_datetime) {
-    //                 $start_datetime = new DateTime("last day of next month {$hour}:{$minute}:00", $timezone);
-    //             }
-    //         }
-
-    //         $start_timestamp = $start_datetime->getTimestamp();
-
-    //         // Create monthly schedule
-    //         add_filter('cron_schedules', function ($schedules) {
-    //             $schedules['monthly'] = [
-    //                 'interval' => 30 * DAY_IN_SECONDS,
-    //                 'display' => __('Once Monthly')
-    //             ];
-    //             return $schedules;
-    //         });
-
-    //         wp_schedule_event($start_timestamp, 'monthly', $hook_name);
-    //         return;
-    //     }
-
-    //     // Default intervals (hourly, twicedaily, daily)
-    //     $start_datetime = new DateTime("today {$hour}:{$minute}:00", $timezone);
-    //     if ($start_datetime <= $current_datetime) {
-    //         $start_datetime = new DateTime("tomorrow {$hour}:{$minute}:00", $timezone);
-    //     }
-
-    //     $start_timestamp = $start_datetime->getTimestamp();
-    //     wp_schedule_event($start_timestamp, $interval, $hook_name);
-    // }
-
-    private function schedule_interval_cleanup($hook_name, $interval, $time)
+    private static function schedule_interval_cleanup($hook_name, $interval, $time)
     {
         list($hour, $minute) = explode(':', $time);
 
@@ -450,11 +362,9 @@ class Log_Manager_Settings
          * CUSTOM RANGE (every N days)
          */
         if ($interval === 'custom_range') {
-
-            if (!wp_next_scheduled($hook_name)) {
-                wp_schedule_event($timestamp, 'log_manager_custom', $hook_name);
-            }
-            return;
+             wp_clear_scheduled_hook($hook_name);
+             wp_schedule_event($timestamp, 'log_manager_custom', $hook_name);
+             return;
         }
 
         /**
@@ -481,7 +391,6 @@ class Log_Manager_Settings
         if ($interval === 'monthly') {
 
             $monthly_option = get_option('log_manager_monthly_option', 'first');
-
             if ($monthly_option === 'first') {
                 $monthly = new DateTime("first day of next month {$hour}:{$minute}:00", $timezone);
             } else {
@@ -520,7 +429,7 @@ class Log_Manager_Settings
             $timezone = wp_timezone();
             $datetime = new DateTime('@' . $timestamp);
             $datetime->setTimezone($timezone);
-            return $datetime->format('Y-m-d H:i:s') . ' (' . $timezone->getName() . ')';
+            return $datetime->format('Y-m-d H:i:s') . 'UTC (' . $timezone->getName() . ')';
         }
         return false;
     }
@@ -572,33 +481,18 @@ class Log_Manager_Settings
         $interval      = get_option('log_manager_cron_interval', '');
 
         if ($cron_enabled && $schedule_type === 'custom_interval' && $interval === 'monthly') {
-            $settings = new self();
-            $settings->schedule_interval_cleanup(
+            self::schedule_interval_cleanup(
                 'log_manager_cleanup_hook',
                 'monthly',
                 get_option('log_manager_cron_time', '02:00')
             );
         }
-
     }
 
-    // public function sdw_register_custom_cron_schedules($schedules)
-    // {
-    //     $custom_days = (int) get_option('log_manager_custom_days', 7);
-    //     $schedules['log_manager_custom'] = [
-    //         'interval' => $custom_days * DAY_IN_SECONDS,
-    //         'display'  => sprintf('Every %d days', $custom_days),
-    //     ];
-    //     $schedules['monthly'] = [
-    //         'interval' => 30 * DAY_IN_SECONDS,
-    //         'display'  => 'Once Monthly',
-    //     ];
-    //     return $schedules;
-    // }
+
     public function sdw_register_custom_cron_schedules($schedules)
     {
         $custom_days = (int) get_option('log_manager_custom_days', 7);
-
         $schedules['log_manager_custom'] = [
             'interval' => $custom_days * DAY_IN_SECONDS,
             'display'  => sprintf(__('Every %d days', 'log-manager'), $custom_days),

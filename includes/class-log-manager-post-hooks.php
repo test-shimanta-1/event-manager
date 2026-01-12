@@ -15,6 +15,11 @@ class Log_Manager_Post_Hooks
      */
     protected static $before_term_update = [];
 
+    /**
+     * stored featured image data
+     * 
+     * @since 1.0.4
+     */
     protected static $featured_image_logged = [];
 
     /**
@@ -59,7 +64,8 @@ class Log_Manager_Post_Hooks
      * @param int    $post_id  
      * @param string $meta_key 
      * @param mixed  $meta_value Meta value (attachment ID).
-     *
+     *  
+     * @since 1.0.4
      * @return void
      */
     public function sdw_featured_image_added($meta_id, $post_id, $meta_key, $meta_value = null)
@@ -84,6 +90,7 @@ class Log_Manager_Post_Hooks
      * @param string $meta_key  
      * @param mixed  $meta_value New attachment ID.
      *
+     * @since 1.0.4
      * @return void
      */
     public function sdw_featured_image_updated($meta_id, $post_id, $meta_key, $meta_value = null)
@@ -112,6 +119,7 @@ class Log_Manager_Post_Hooks
      * @param string $meta_key   
      * @param mixed  $meta_value Meta value.
      *
+     * @since 1.0.4
      * @return void
      */
     public function sdw_featured_image_removed($meta_ids, $post_id, $meta_key, $meta_value = null)
@@ -137,7 +145,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? ''),
             'userid' => get_current_user_id(),
-            'event_time' => current_time('mysql'),
+            'event_time' => date('Y/m/d H:i:s'),
             'object_type' => 'Media',
             'severity' => 'notice',
             'event_type' => 'deleted',
@@ -156,6 +164,7 @@ class Log_Manager_Post_Hooks
      * @param int    $attachment_id 
      * @param string $event_type    Event type (assigned|modified).
      *
+     * @since 1.0.4
      * @return void
      */
     private function log_featured_image_event($post_id, $attachment_id, $event_type)
@@ -177,7 +186,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? ''),
             'userid' => get_current_user_id(),
-            'event_time' => current_time('mysql'),
+            'event_time' => date('Y/m/d H:i:s'),
             'object_type' => 'Media',
             'severity' => 'notice',
             'event_type' => $event_type,
