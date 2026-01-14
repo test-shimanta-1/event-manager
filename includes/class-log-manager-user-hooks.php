@@ -61,7 +61,7 @@ class Log_Manager_User_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => $user_id,
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'User',
             'severity' => 'info',
             'event_type' => 'logged-in',
@@ -107,7 +107,7 @@ class Log_Manager_User_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'],
             'userid'     => $user_id,
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type'=> 'User',
             'severity'   => 'info',
             'event_type' => 'logout',
@@ -173,7 +173,7 @@ class Log_Manager_User_Hooks
             Log_Manager_Logger::insert([
                 'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
                 'userid'     => $user_obj->ID,
-                'event_time' => date('Y/m/d H:i:s'),
+                'event_time' => current_time('mysql'),
                 'object_type'=> 'User',
                 'severity'   => 'warning',
                 'event_type' => 'login-failed',
@@ -187,7 +187,7 @@ class Log_Manager_User_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid'     => 0,
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type'=> 'User',
             'severity'   => 'warning',
             'event_type' => 'login-failed',

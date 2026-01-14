@@ -145,7 +145,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? ''),
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'Media',
             'severity' => 'notice',
             'event_type' => 'deleted',
@@ -186,7 +186,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? ''),
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'Media',
             'severity' => 'notice',
             'event_type' => $event_type,
@@ -244,7 +244,7 @@ class Log_Manager_Post_Hooks
 
         $user_id = get_current_user_id();
         $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
-        $time = date('Y/m/d H:i:s');
+        $time = current_time('mysql');
         $title = get_the_title($post->ID);
         $type = get_post_type($post->ID);
 
@@ -341,7 +341,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'],
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'Post',
             'severity' => 'notice',
             'event_type' => 'deleted',
@@ -370,7 +370,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'Taxonomy',
             'severity' => 'notice',
             'event_type' => 'created',
@@ -484,7 +484,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'Taxonomy',
             'severity' => 'notice',
             'event_type' => 'modified',
@@ -528,7 +528,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'Taxonomy',
             'severity' => 'warning',
             'event_type' => 'deleted',
@@ -616,7 +616,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'Taxonomy',
             'severity' => 'notice',
             'event_type' => 'assigned',
@@ -707,7 +707,7 @@ class Log_Manager_Post_Hooks
         Log_Manager_Logger::insert([
             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
             'userid' => get_current_user_id(),
-            'event_time' => date('Y/m/d H:i:s'),
+            'event_time' => current_time('mysql'),
             'object_type' => 'Taxonomy',
             'severity' => 'notice',
             'event_type' => 'modified',

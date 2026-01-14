@@ -275,8 +275,12 @@ class Log_Manager_Log_Table extends WP_List_Table
 		$offset = ($page - 1) * $per_page;
 
 		$allowed_orderby = ['id', 'event_time', 'severity', 'event_type', 'object_type'];
-		$orderby = in_array($_POST['orderby'] ?? '', $allowed_orderby, true) ? $_POST['orderby'] : 'id';
-		$order = (!empty($_POST['order']) && $_POST['order'] === 'asc') ? 'ASC' : 'DESC';
+		if (!empty($_POST['orderby']) && in_array($_POST['orderby'], $allowed_orderby, true)) {
+			$orderby = $_POST['orderby'];
+		} else {
+			$orderby = 'event_time';
+		}
+		$order = (!empty($_POST['order']) && strtolower($_POST['order']) === 'asc') ? 'ASC' : 'DESC';
 
 		$where = [];
 		$values = [];
@@ -293,12 +297,12 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 		if (!empty($_POST['start_date'])) {
 			$where[] = "event_time >= %s";
-			$values[] = str_replace('-', '/', $_POST['start_date']);
+			$values[] = $_POST['start_date'] . ' 00:00:00';
 		}
 
 		if (!empty($_POST['end_date'])) {
 			$where[] = "event_time <= %s";
-			$values[] = str_replace('-', '/', $_POST['end_date']);
+			$values[] = $_POST['end_date'] . ' 23:59:59';
 		}
 
 		if (!empty($_POST['user_id'])) {
@@ -353,12 +357,12 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 		if (!empty($_POST['start_date'])) {
 			$where[] = "event_time >= %s";
-			$values[] = str_replace('-', '/', $_POST['start_date']);
+			$values[] = $_POST['start_date'] . ' 00:00:00';
 		}
 
 		if (!empty($_POST['end_date'])) {
 			$where[] = "event_time <= %s";
-			$values[] = str_replace('-', '/', $_POST['end_date']);
+			$values[] = $_POST['end_date'] . ' 23:59:59';
 		}
 
 		if (!empty($_POST['user_id'])) {
@@ -824,7 +828,7 @@ function sdw_log_manager_export_csv_handler()
 	fputcsv($output, ['User ID', 'IP Address', 'Date & Time', 'Severity', 'Event Type', 'Object Type', 'Message']);
 	foreach ($results as $row) {
 		fputcsv($output, [$row['userid'] ?: 'Guest',$row['ip_address'],$row['event_time'],ucfirst($row['severity']),$row['event_type'],$row['object_type'],$row['message']]);
-		}
+	}
 	fclose($output);
 	exit;
 }

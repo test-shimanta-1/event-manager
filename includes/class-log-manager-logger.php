@@ -101,7 +101,7 @@ class Log_Manager_Logger
             $handle,
             sprintf(
                 "%-20s | %-7s | %-10s | %s\n",
-                date('Y/m/d H:i:s'),
+                current_time('mysql'),
                 $data['userid'] ?? '0',
                 $data['event_type'] ?? '',
                 $data['message'] . "\n"
