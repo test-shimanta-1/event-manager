@@ -2,7 +2,7 @@
 /**
  * Plugin Dashboard View Class File.
  * Handels: pagination, filteration, sorting, bulk actions, data fetching
- * 
+ *
  * @since 1.0.1
  * @package Log_Manager
  */
@@ -13,14 +13,14 @@ if (!class_exists('WP_List_Table')) {
 
 /**
  * Log Manager table extending WP_List_Table class.
- * 
+ *
  */
 class Log_Manager_Log_Table extends WP_List_Table
 {
 
 	/**
 	 * Defines all columns shown in the log table
-	 * 
+	 *
 	 * @return void
 	 */
 	public function get_columns()
@@ -40,7 +40,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Return the user's email
-	 * 
+	 *
 	 * @return string
 	 */
 	public function column_user_email($item)
@@ -65,7 +65,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 	/**
 	 * Handels extra filters above the table.
 	 * Filters applied: dates, role, user, severity.
-	 * 
+	 *
 	 * @return void
 	 */
 	protected function extra_tablenav($which)
@@ -150,7 +150,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 *  Defines hidden columns
-	 * 
+	 *
 	 *  @return void
 	 */
 	public function get_hidden_columns()
@@ -160,7 +160,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Registers bulk actions for the table
-	 * 
+	 *
 	 * @return void
 	 */
 	protected function get_bulk_actions()
@@ -188,7 +188,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Handles bulk delete action
-	 * 
+	 *
 	 * @return void
 	 */
 	public function process_bulk_action()
@@ -218,7 +218,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Defines sortable columns
-	 * 
+	 *
 	 * @return void
 	 */
 	public function get_sortable_columns()
@@ -233,7 +233,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Prepares table data before rendering: Pagination, Fetch logs, Column headers
-	 * 
+	 *
 	 * @return void
 	 */
 	public function prepare_items()
@@ -265,7 +265,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 	/**
 	 * Fetches log records from database.
 	 * Applies: search, sorting, pagination, filteration(darte, user, role, severity)
-	 * 
+	 *
 	 * @return array ~ List of log records for the current page after applying filters, sorting, and pagination.
 	 */
 	private function get_logs($per_page, $page)
@@ -287,11 +287,11 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 		if (!empty($_POST['s'])) {
 			$like = '%' . $wpdb->esc_like($_POST['s']) . '%';
-			$where[] = "(ip_address LIKE %s 
-						OR event_type LIKE %s 
-						OR object_type LIKE %s 
-						OR message LIKE %s
-						OR severity LIKE %s)";
+			$where[] = "(ip_address LIKE %s
+				OR event_type LIKE %s
+				OR object_type LIKE %s
+				OR message LIKE %s
+				OR severity LIKE %s)";
 			array_push($values, $like, $like, $like, $like, $like);
 		}
 
@@ -335,7 +335,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Returns total number of log records, used for pagination count
-	 * 
+	 *
 	 * @return int Total number of log records matching the applied filters (used for pagination).
 	 */
 	private function get_total_items()
@@ -347,11 +347,11 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 		if (!empty($_POST['s'])) {
 			$like = '%' . $wpdb->esc_like($_POST['s']) . '%';
-			$where[] = "(ip_address LIKE %s 
-						OR event_type LIKE %s 
-						OR object_type LIKE %s 
-						OR message LIKE %s
-						OR severity LIKE %s)";
+			$where[] = "(ip_address LIKE %s
+				OR event_type LIKE %s
+				OR object_type LIKE %s
+				OR message LIKE %s
+				OR severity LIKE %s)";
 			array_push($values, $like, $like, $like, $like, $like);
 		}
 
@@ -392,7 +392,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Renders checkbox column for bulk actions
-	 * 
+	 *
 	 * @return string HTML checkbox markup for bulk action selection of a row.
 	 */
 	public function column_cb($item)
@@ -402,19 +402,43 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Custom rendering for User column
-	 * 
+	 *
 	 * @return string HTML output displaying user role and details, or Guest/User deleted text.
 	 */
 	public function column_userid($item)
 	{
-		// Guest
+		// guest user
 		if (empty($item['userid'])) {
-			return '<em>Guest</em>';
+
+			$guest_name = 'Guest User';
+			$guest_email = '—';
+			$guest_role = 'Guest';
+
+			// Generate default avatar
+			$avatar = get_avatar('', 32, 'mystery');
+
+			return sprintf(
+				'<div class="lm-user-cell">
+				<div class="lm-user-link">
+				<div class="lm-user-avatar">%s</div>
+				<div class="lm-user-meta">
+				<strong class="lm-user-name">%s</strong>
+				<div class="lm-user-role">%s</div>
+				</div>
+				</div>
+				</div>',
+				$avatar,
+				esc_html($guest_name),
+				esc_html($guest_role),
+				esc_html($guest_name),
+				esc_html($guest_email),
+				esc_html($guest_role)
+			);
 		}
 
+		// register user
 		$user = get_userdata(absint($item['userid']));
 
-		// Deleted user
 		if (!$user) {
 			return '<em>User deleted</em>';
 		}
@@ -430,20 +454,20 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 		return sprintf(
 			'<div class="lm-user-cell">
-			<a href="%s" class="lm-user-link">
-				<div class="lm-user-avatar">%s</div>
-				<div class="lm-user-meta">
+					<a href="%s" class="lm-user-link">
+					<div class="lm-user-avatar">%s</div>
+					<div class="lm-user-meta">
 					<strong class="lm-user-name">%s</strong>
 					<div class="lm-user-role">%s</div>
-				</div>
-			</a>
+					</div>
+					</a>
 
-			<div class="lm-user-tooltip">
-				<b>Username:</b> %s<br>
-				<b>Email:</b> %s<br>
-				<b>Role:</b> %s
-			</div>
-		</div>',
+					<div class="lm-user-tooltip">
+					<b>Username:</b> %s<br>
+					<b>Email:</b> %s<br>
+					<b>Role:</b> %s
+					</div>
+					</div>',
 			esc_url($profile_url),
 			$avatar,
 			esc_html($display_name),
@@ -458,7 +482,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 	/**
 	 * Default column renderer, handles long messages with 'read more' toggle
-	 * 
+	 *
 	 * @return string HTML or text value for table cells, including Read More handling for messages.
 	 */
 	public function column_default($item, $column_name)
@@ -469,7 +493,7 @@ class Log_Manager_Log_Table extends WP_List_Table
 
 			return sprintf(
 				'<span>%s...</span>
-             <a href="#" 
+             <a href="#"
                 class="lm-view-log"
                 data-id="%d"
                 data-user="%s"
@@ -494,15 +518,15 @@ class Log_Manager_Log_Table extends WP_List_Table
 		}
 
 		return esc_html($item[$column_name] ?? '—');
-		}
 	}
+}
 
 /**
  * Dashboard Renderer class
- * 
+ *
  * @since 1.0.1
  * @package Log_Manager
- * 
+ *
  */
 class Log_Manager_Dashboard
 {
@@ -555,9 +579,9 @@ class Log_Manager_Dashboard
 
 	/**
 	 * Dashboard UI including filters, table, styles, and scripts.
-	 * 
+	 *
 	 * @since 1.0.0
-	 * @return void 
+	 * @return void
 	 */
 	public static function sdw_dashboard_render()
 	{
@@ -600,7 +624,7 @@ class Log_Manager_Dashboard
 					document.getElementById('lm-severity').textContent = btn.dataset.severity;
 					document.getElementById('lm-event').textContent = btn.dataset.event;
 					document.getElementById('lm-object').textContent = btn.dataset.object;
-					document.getElementById('lm-message').innerHTML  = btn.dataset.message;
+					document.getElementById('lm-message').innerHTML = btn.dataset.message;
 
 					document.getElementById('lm-log-modal').style.display = 'block';
 				}
@@ -622,7 +646,7 @@ class Log_Manager_Dashboard
 
 				if ($table->current_action() === 'delete') {
 					echo '<div class="notice notice-success is-dismissible">
-							<p>Logs deleted successfully.</p>
+						<p>Logs deleted successfully.</p>
 						</div>';
 				}
 
@@ -827,7 +851,7 @@ function sdw_log_manager_export_csv_handler()
 	$output = fopen('php://output', 'w');
 	fputcsv($output, ['User ID', 'IP Address', 'Date & Time', 'Severity', 'Event Type', 'Object Type', 'Message']);
 	foreach ($results as $row) {
-		fputcsv($output, [$row['userid'] ?: 'Guest',$row['ip_address'],$row['event_time'],ucfirst($row['severity']),$row['event_type'],$row['object_type'],$row['message']]);
+		fputcsv($output, [$row['userid'] ?: 'Guest', $row['ip_address'], $row['event_time'], ucfirst($row['severity']), $row['event_type'], $row['object_type'], $row['message']]);
 	}
 	fclose($output);
 	exit;
@@ -869,11 +893,11 @@ function sdw_log_manager_export_pdf_handler()
 
 	if (!empty($_POST['s'])) {
 		$like = '%' . $wpdb->esc_like($_POST['s']) . '%';
-		$where[] = "(ip_address LIKE %s 
-					OR event_type LIKE %s 
-					OR object_type LIKE %s 
-					OR message LIKE %s
-					OR severity LIKE %s)";
+		$where[] = "(ip_address LIKE %s
+			OR event_type LIKE %s
+			OR object_type LIKE %s
+			OR message LIKE %s
+			OR severity LIKE %s)";
 		array_push($values, $like, $like, $like, $like, $like);
 	}
 
@@ -1005,4 +1029,3 @@ function sdw_log_manager_export_pdf_handler()
 	exit;
 }
 add_action('admin_init', 'sdw_log_manager_export_pdf_handler');
-
