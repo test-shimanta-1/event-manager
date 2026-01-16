@@ -45,28 +45,29 @@ class Log_Manager_User_Hooks
      */
     public function sdw_log_successful_login($cookie, $expire, $expiration, $user_id)
     {
-        $user_info = get_userdata($user_id);
-        $user_role = implode(', ', $user_info->roles);
-
-        $full_name = $this->sdw_get_user_full_name($user_info);
-        $message = 'Login successful. ';
-        $message .= 'User ID: ' . $user_id . ', ';
-        $message .= 'Role: ' . $user_role . ', ';
-        $message .= 'Email: ' . $user_info->user_email;
-
-        if ($full_name !== '') {
-            $message .= ', Full Name: ' . $full_name;
+        $user = get_userdata($user_id);
+        if (!$user) {
+            return;
         }
 
+        $message = sprintf(
+            'Login successful.<br/>User ID: <b>%d</b><br/>Role: <b>%s</b><br/>Email: <b>%s</b>%s',
+            $user_id,
+            esc_html(implode(', ', $user->roles)),
+            esc_html($user->user_email),
+            $this->sdw_get_user_full_name($user)
+        );
+
         Log_Manager_Logger::insert([
-            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
-            'userid' => $user_id,
-            'event_time' => current_time('mysql'),
+            'ip_address'  => sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? ''),
+            'userid'      => $user_id,
+            'event_time'  => current_time('mysql'),
             'object_type' => 'User',
-            'severity' => 'info',
-            'event_type' => 'logged-in',
-            'message' => $message,
+            'severity'    => 'info',
+            'event_type'  => 'logged-in',
+            'message'     => $message,
         ]);
+
     }
 
     
@@ -86,33 +87,29 @@ class Log_Manager_User_Hooks
             return;
         }
 
-        $user_info = get_userdata($user_id);
-        if (!$user_info) {
+        $user = get_userdata($user_id);
+        if (!$user) {
             return;
         }
 
-        $user_role = implode(', ', $user_info->roles);
-        $full_name = $this->sdw_get_user_full_name($user_info);
-
-        // Build clean message
-        $message  = 'User logged out. ';
-        $message .= 'User ID: ' . $user_id;
-        $message .= ', Role: ' . $user_role;
-        $message .= ', Email: ' . $user_info->user_email;
-
-        if ($full_name !== '') {
-            $message .= ', Full Name: ' . $full_name;
-        }
+        $message = sprintf(
+            'User logged out.<br/>User ID: <b>%d</b><br/>Role: <b>%s</b><br/>Email: <b>%s</b>%s',
+            $user_id,
+            esc_html(implode(', ', $user->roles)),
+            esc_html($user->user_email),
+            $this->sdw_get_user_full_name($user)
+        );
 
         Log_Manager_Logger::insert([
-            'ip_address' => $_SERVER['REMOTE_ADDR'],
-            'userid'     => $user_id,
-            'event_time' => current_time('mysql'),
-            'object_type'=> 'User',
-            'severity'   => 'info',
-            'event_type' => 'logout',
-            'message'    => $message,
+            'ip_address'  => sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? ''),
+            'userid'      => $user_id,
+            'event_time'  => current_time('mysql'),
+            'object_type' => 'User',
+            'severity'    => 'info',
+            'event_type'  => 'logout',
+            'message'     => $message,
         ]);
+        
     }
 
 
@@ -143,58 +140,60 @@ class Log_Manager_User_Hooks
             return $user;
         }
 
-        // Only handle failed authentication
-        if (!is_wp_error($user)) {
+        // Ignore successful authentication
+        if (!is_wp_error($user) || empty($username)) {
             return $user;
         }
 
-        // Try to find user by username
-        $user_obj = get_user_by('login', $username);
+        $ip = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '');
 
-        // If input is email, try finding user by email
+        // Try resolving user
+        $user_obj = get_user_by('login', $username);
         if (!$user_obj && is_email($username)) {
             $user_obj = get_user_by('email', $username);
         }
 
-        // Existing user → wrong password
+        /**
+         * Existing user → wrong password (WARNING)
+         */
         if ($user_obj instanceof WP_User) {
 
-            $real_username = $user_obj->user_login;
-            $full_name     = $this->sdw_get_user_full_name($user_obj);
-
-            $message  = 'Wrong password for username: ' . $real_username . '. ';
-            $message .= 'User ID: ' . $user_obj->ID;
-            $message .= ', Email: ' . $user_obj->user_email;
-
-            if ($full_name !== '') {
-                $message .= ', Full Name: ' . $full_name;
-            }
+            $message = sprintf(
+                'Wrong password attempt.<br/>User ID: <b>%d</b><br/>Username: <b>%s</b><br/>Email: <b>%s</b>%s',
+                $user_obj->ID,
+                esc_html($user_obj->user_login),
+                esc_html($user_obj->user_email),
+                $this->sdw_get_user_full_name($user_obj)
+            );
 
             Log_Manager_Logger::insert([
-                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
-                'userid'     => $user_obj->ID,
-                'event_time' => current_time('mysql'),
-                'object_type'=> 'User',
-                'severity'   => 'warning',
-                'event_type' => 'login-failed',
-                'message'    => $message,
+                'ip_address'  => $ip,
+                'userid'      => $user_obj->ID,
+                'event_time'  => current_time('mysql'),
+                'object_type' => 'User',
+                'severity'    => 'warning',
+                'event_type'  => 'login-failed',
+                'message'     => $message,
             ]);
 
             return $user;
         }
 
-        // Non-existent user
+        /**
+         * Non-existent user → ALERT
+         */
         Log_Manager_Logger::insert([
-            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
-            'userid'     => 0,
-            'event_time' => current_time('mysql'),
-            'object_type'=> 'User',
-            'severity'   => 'warning',
-            'event_type' => 'login-failed',
-            'message'    => 'Login attempt with non-existent username: ' . $username,
+            'ip_address'  => $ip,
+            'userid'      => 0,
+            'event_time'  => current_time('mysql'),
+            'object_type' => 'User',
+            'severity'    => 'alert',
+            'event_type'  => 'login-failed',
+            'message'     => 'Login attempt with non-existent username: <b>' . esc_html($username) . '</b>',
         ]);
 
         return $user;
+
     }
 
     /**
@@ -215,14 +214,15 @@ class Log_Manager_User_Hooks
             return '';
         }
 
-        $first = trim($user->user_firstname ?? '');
-        $last  = trim($user->user_lastname ?? '');
+        $first = trim($user->user_firstname);
+        $last  = trim($user->user_lastname);
 
         if ($first === '' && $last === '') {
             return '';
         }
 
-        return trim($first . ' ' . $last);
+        return '<br/>Full Name: <b>' . esc_html(trim($first . ' ' . $last)) . '</b>';
+
     }
 
 }

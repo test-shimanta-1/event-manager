@@ -38,6 +38,27 @@ class Log_Manager_Log_Table extends WP_List_Table
 		];
 	}
 
+	/** 
+	 * severities
+	 * 
+	 * @since 1.0.4
+	 * @return array
+	 */
+	public static function get_allowed_severities()
+	{
+		return [
+			'emergency' => 'Emergency',
+			'alert'     => 'Alert',
+			'critical'  => 'Critical',
+			'error'     => 'Error',
+			'warning'   => 'Warning',
+			'notice'    => 'Notice',
+			'info'      => 'Info',
+			'debug'     => 'Debug',
+		];
+	}
+
+
 	/**
 	 * Return the user's email
 	 *
@@ -116,15 +137,17 @@ class Log_Manager_Log_Table extends WP_List_Table
 			</select>
 
 			<!-- Severity Filter -->
+			<?php $severities = self::get_allowed_severities(); ?>
 			<select name="severity">
 				<option value="">All Severities</option>
-				<option value="info" <?php selected($_POST['severity'] ?? '', 'info'); ?>>Info</option>
-				<option value="notice" <?php selected($_POST['severity'] ?? '', 'notice'); ?>>Notice</option>
-				<option value="warning" <?php selected($_POST['severity'] ?? '', 'warning'); ?>>Warning</option>
-				<option value="error" <?php selected($_POST['severity'] ?? '', 'error'); ?>>Error</option>
-				<option value="critical" <?php selected($_POST['severity'] ?? '', 'critical'); ?>>Critical</option>
-				<option value="bug" <?php selected($_POST['severity'] ?? '', 'bug'); ?>>Bug</option>
+				<?php foreach ($severities as $key => $label): ?>
+					<option value="<?php echo esc_attr($key); ?>"
+						<?php selected($_POST['severity'] ?? '', $key); ?>>
+						<?php echo esc_html($label); ?>
+					</option>
+				<?php endforeach; ?>
 			</select>
+
 
 			<?php submit_button('Filter', '', 'filter_action', false); ?>
 
@@ -310,7 +333,8 @@ class Log_Manager_Log_Table extends WP_List_Table
 			$values[] = absint($_POST['user_id']);
 		}
 
-		if (!empty($_POST['severity'])) {
+		$allowed = array_keys(self::get_allowed_severities());
+		if (!empty($_POST['severity']) && in_array($_POST['severity'], $allowed, true)) {
 			$where[] = "severity = %s";
 			$values[] = $_POST['severity'];
 		}
@@ -370,7 +394,8 @@ class Log_Manager_Log_Table extends WP_List_Table
 			$values[] = absint($_POST['user_id']);
 		}
 
-		if (!empty($_POST['severity'])) {
+		$allowed = array_keys(self::get_allowed_severities());
+		if (!empty($_POST['severity']) && in_array($_POST['severity'], $allowed, true)) {
 			$where[] = "severity = %s";
 			$values[] = $_POST['severity'];
 		}
@@ -822,9 +847,10 @@ function sdw_log_manager_export_csv_handler()
 		$values[] = absint($_POST['user_id']);
 	}
 
-	if (!empty($_POST['severity'])) {
+	$allowed = array_keys(Log_Manager_Log_Table::get_allowed_severities());
+	if (!empty($_POST['severity']) && in_array($_POST['severity'], $allowed, true)) {
 		$where[] = "severity = %s";
-		$values[] = sanitize_text_field($_POST['severity']);
+		$values[] = $_POST['severity'];
 	}
 
 	if (!empty($_POST['role'])) {
@@ -916,9 +942,10 @@ function sdw_log_manager_export_pdf_handler()
 		$values[] = absint($_POST['user_id']);
 	}
 
-	if (!empty($_POST['severity'])) {
+	$allowed = array_keys(Log_Manager_Log_Table::get_allowed_severities());
+	if (!empty($_POST['severity']) && in_array($_POST['severity'], $allowed, true)) {
 		$where[] = "severity = %s";
-		$values[] = sanitize_text_field($_POST['severity']);
+		$values[] = $_POST['severity'];
 	}
 
 	if (!empty($_POST['role'])) {

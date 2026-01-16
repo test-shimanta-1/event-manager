@@ -22,7 +22,7 @@ class Log_Manager_DB
             $sql = "CREATE TABLE $db_table_name (
                     id int(11) NOT NULL auto_increment,
                     userid varchar(200) NOT NULL,
-                    severity ENUM('info', 'notice', 'warning', 'error', 'critical', 'bug') NOT NULL,
+                    severity ENUM('emergency','alert','critical','error','warning','notice','info','debug') NOT NULL,
                     ip_address varchar(15) NOT NULL,
                     event_type ENUM( 'created','modified','trashed','restored','deleted','logged-in','login-failed','logout','published', 'assigned') NOT NULL,
                     event_time varchar(20) NOT NULL,
