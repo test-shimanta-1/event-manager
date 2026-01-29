@@ -25,20 +25,6 @@ class Log_Manager {
         'debug'
     ];
     
-    /**
-     * Options to skip logging (too noisy)
-     */
-    // const SKIP_OPTIONS = [
-    //     'cron',
-    //     'recently_activated',
-    //     '_transient_',
-    //     '_site_transient_',
-    //     'rewrite_rules',
-    //     'can_compress_scripts',
-    //     'auto_updater.lock',
-    //     'finished_splitting_shared_terms',
-    //     'db_upgraded',
-    // ];
     
     /**
      * Initialize plugin
@@ -63,9 +49,6 @@ class Log_Manager {
     private function setup_hooks() {
         // Initialize on WordPress init
         add_action('init', [$this, 'init_plugin']);
-        
-        // Cleanup old logs daily
-        // add_action('log_manager_daily_cleanup', [$this, 'cleanup_old_logs']);
     }
     
     /**
@@ -85,24 +68,12 @@ class Log_Manager {
         // Create database table
         self::create_table();
         
-        // Set default options
-        // update_option('log_manager_version', LOG_MANAGER_VERSION);
-        // update_option('log_manager_retention_days', 30);
-        // update_option('log_manager_severity_level', 'info');
-        // update_option('log_manager_skip_cron', 'yes');
-        
-        // Schedule daily cleanup
-        // if (!wp_next_scheduled('log_manager_daily_cleanup')) {
-        //     wp_schedule_event(time(), 'daily', 'log_manager_daily_cleanup');
-        // }
     }
     
     /**
      * Plugin deactivation
      */
     public static function deactivate() {
-        // Clear scheduled cleanup
-        // wp_clear_scheduled_hook('log_manager_daily_cleanup');
     }
     
     /**
@@ -144,107 +115,178 @@ class Log_Manager {
     /**
      * Log an activity with HTML support
      */
-    public static function log($action, $object_type = '', $object_id = 0, $object_name = '', $details = [], $severity = 'info') {
-        // global $wpdb;
+    // public static function log($action, $object_type = '', $object_id = 0, $object_name = '', $details = [], $severity = 'info') {
+    //     global $wpdb;
+    //     $table_name = $wpdb->prefix . self::TABLE_NAME;
         
-        // // Check if we should skip this log based on severity setting
-        // $min_severity = get_option('log_manager_severity_level', 'info');
-        // $levels = array_flip(self::SEVERITY_LEVELS);
+    //     // Format details for storage
+    //     $formatted_details = is_array($details) ? $details : [];
         
-        // if (!isset($levels[$severity]) || !isset($levels[$min_severity])) {
-        //     return false;
-        // }
+    //     // Process details to ensure HTML is properly stored
+    //     foreach ($formatted_details as $key => $value) {
+    //         // If value contains HTML, make sure it's properly formatted
+    //         if (is_string($value) && preg_match('/<[^>]+>/', $value)) {
+    //             // Already HTML, keep as is
+    //             continue;
+    //         } elseif (is_array($value) || is_object($value)) {
+    //             // Convert arrays/objects to JSON
+    //             $formatted_details[$key] = $value;
+    //         }
+    //     }
         
-        // // Skip if severity is below minimum
-        // if ($levels[$severity] > $levels[$min_severity]) {
-        //     return false;
-        // }
+    //     $data = [
+    //         'user_id' => get_current_user_id() ?: 0,
+    //         'user_ip' => self::get_user_ip(),
+    //         'severity' => $severity,
+    //         'action' => sanitize_text_field($action),
+    //         'object_type' => sanitize_text_field($object_type),
+    //         'object_id' => absint($object_id),
+    //         'object_name' => sanitize_text_field($object_name),
+    //         'details' => wp_json_encode($formatted_details, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    //         'timestamp' => current_time('mysql')
+    //     ];
         
-        // $table_name = $wpdb->prefix . self::TABLE_NAME;
+    //     // Insert into database
+    //     $result = $wpdb->insert($table_name, $data);
         
-        // // Format details for storage
-        // $formatted_details = is_array($details) ? $details : [];
+    //     // Error logging for debugging
+    //     if (false === $result) {
+    //         error_log('Log Manager Error: Failed to insert log. Error: ' . $wpdb->last_error);
+    //     }
         
-        // // Process details to ensure HTML is properly stored
-        // foreach ($formatted_details as $key => $value) {
-        //     // If value contains HTML, make sure it's properly formatted
-        //     if (is_string($value) && preg_match('/<[^>]+>/', $value)) {
-        //         // Already HTML, keep as is
-        //         continue;
-        //     } elseif (is_array($value) || is_object($value)) {
-        //         // Convert arrays/objects to JSON
-        //         $formatted_details[$key] = $value;
-        //     }
-        // }
-        
-        // $data = [
-        //     'user_id' => get_current_user_id() ?: 0,
-        //     'user_ip' => self::get_user_ip(),
-        //     'severity' => $severity,
-        //     'action' => sanitize_text_field($action),
-        //     'object_type' => sanitize_text_field($object_type),
-        //     'object_id' => absint($object_id),
-        //     'object_name' => sanitize_text_field($object_name),
-        //     'details' => wp_json_encode($formatted_details, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        //     'timestamp' => current_time('mysql')
-        // ];
-        
-        // // Insert into database
-        // $result = $wpdb->insert($table_name, $data);
-        
-        // // Error logging for debugging
-        // if (false === $result) {
-        //     error_log('Log Manager Error: Failed to insert log. Error: ' . $wpdb->last_error);
-        // }
-        
-        // return $result;
-        global $wpdb;
-        $table_name = $wpdb->prefix . self::TABLE_NAME;
-        
-        // Format details for storage
-        $formatted_details = is_array($details) ? $details : [];
-        
-        // Process details to ensure HTML is properly stored
-        foreach ($formatted_details as $key => $value) {
-            // If value contains HTML, make sure it's properly formatted
-            if (is_string($value) && preg_match('/<[^>]+>/', $value)) {
-                // Already HTML, keep as is
-                continue;
-            } elseif (is_array($value) || is_object($value)) {
-                // Convert arrays/objects to JSON
-                $formatted_details[$key] = $value;
-            }
-        }
-        
-        $data = [
-            'user_id' => get_current_user_id() ?: 0,
-            'user_ip' => self::get_user_ip(),
-            'severity' => $severity,
-            'action' => sanitize_text_field($action),
-            'object_type' => sanitize_text_field($object_type),
-            'object_id' => absint($object_id),
-            'object_name' => sanitize_text_field($object_name),
-            'details' => wp_json_encode($formatted_details, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'timestamp' => current_time('mysql')
-        ];
-        
-        // Insert into database
-        $result = $wpdb->insert($table_name, $data);
-        
-        // Error logging for debugging
-        if (false === $result) {
-            error_log('Log Manager Error: Failed to insert log. Error: ' . $wpdb->last_error);
-        }
-        
-        return $result;
+    //     return $result;
+    // }
+
+
+    /**
+ * Log an activity with HTML support - UPDATED FOR SIMPLE DUAL STORAGE
+ */
+public static function log($action, $object_type = '', $object_id = 0, $object_name = '', $details = [], $severity = 'info') {
+    // Get log destination from settings
+    $destination = Log_Manager_Settings::get_log_destination();
+    
+    // Call appropriate logging method
+    if ($destination === 'textfile') {
+        return self::log_to_textfile($action, $object_type, $object_id, $object_name, $details, $severity);
+    } else {
+        return self::log_to_database($action, $object_type, $object_id, $object_name, $details, $severity);
     }
+}
+
+/**
+ * Log to database (your existing database code)
+ */
+private static function log_to_database($action, $object_type = '', $object_id = 0, $object_name = '', $details = [], $severity = 'info') {
+    global $wpdb;
+    $table_name = $wpdb->prefix . self::TABLE_NAME;
+    
+    // Format details for storage
+    $formatted_details = is_array($details) ? $details : [];
+    
+    // Process details to ensure HTML is properly stored
+    foreach ($formatted_details as $key => $value) {
+        // If value contains HTML, make sure it's properly formatted
+        if (is_string($value) && preg_match('/<[^>]+>/', $value)) {
+            // Already HTML, keep as is
+            continue;
+        } elseif (is_array($value) || is_object($value)) {
+            // Convert arrays/objects to JSON
+            $formatted_details[$key] = $value;
+        }
+    }
+    
+    $data = [
+        'user_id' => get_current_user_id() ?: 0,
+        'user_ip' => self::get_user_ip(),
+        'severity' => $severity,
+        'action' => sanitize_text_field($action),
+        'object_type' => sanitize_text_field($object_type),
+        'object_id' => absint($object_id),
+        'object_name' => sanitize_text_field($object_name),
+        'details' => wp_json_encode($formatted_details, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        'timestamp' => current_time('mysql')
+    ];
+    
+    // Insert into database
+    $result = $wpdb->insert($table_name, $data);
+    
+    // Error logging for debugging
+    if (false === $result) {
+        error_log('Log Manager Error: Failed to insert log. Error: ' . $wpdb->last_error);
+    }
+    
+    return $result;
+}
+
+/**
+ * Log to text file - SIMPLE VERSION
+ */
+private static function log_to_textfile($action, $object_type = '', $object_id = 0, $object_name = '', $details = [], $severity = 'info') {
+    $folder_path = Log_Manager_Settings::get_textfile_path();
+    
+    if (empty($folder_path)) {
+        error_log('Log Manager Error: Text file path not configured.');
+        return false;
+    }
+    
+    // Create folder if doesn't exist
+    if (!file_exists($folder_path)) {
+        if (!wp_mkdir_p($folder_path)) {
+            error_log('Log Manager Error: Cannot create folder: ' . $folder_path);
+            return false;
+        }
+    }
+    
+    // Check if folder is writable
+    if (!is_writable($folder_path)) {
+        error_log('Log Manager Error: Folder is not writable: ' . $folder_path);
+        return false;
+    }
+    
+    // Create filename with current date
+    $filename = date('Y-m-d') . '-logs.txt';
+    $file_path = trailingslashit($folder_path) . $filename;
+    
+    // Prepare log entry
+    $timestamp = current_time('Y-m-d H:i:s');
+    $user_id = get_current_user_id();
+    $user_info = $user_id ? get_userdata($user_id)->user_login : 'System';
+    $ip = self::get_user_ip();
+    
+    // Format details as JSON
+    $details_json = !empty($details) ? json_encode($details, JSON_UNESCAPED_UNICODE) : '{}';
+    
+    // Create log line
+    $log_line = sprintf(
+        "\n[%s] [%s] [User: %s] [IP: %s] [Action: %s] [Object: %s#%d %s] Details: %s\n",
+        $timestamp,
+        strtoupper($severity),
+        $user_info,
+        $ip,
+        $action,
+        $object_type,
+        $object_id,
+        $object_name,
+        $details_json
+    );
+    
+    // Write to file
+    $result = file_put_contents($file_path, $log_line, FILE_APPEND | LOCK_EX);
+    
+    if ($result === false) {
+        error_log('Log Manager Error: Failed to write to text file: ' . $file_path);
+        return false;
+    }
+    
+    return true;
+}
+
     
     /**
      * Get logs with pagination and HTML support
      */
     public static function get_logs($page = 1, $per_page = 50, $filters = []) {
         global $wpdb;
-        
         $table_name = $wpdb->prefix . self::TABLE_NAME;
         
         $where = ['1=1'];
@@ -380,9 +422,7 @@ class Log_Manager {
         }
         
         $where_sql = implode(' AND ', $where);
-        
         $query = "SELECT COUNT(*) FROM $table_name WHERE $where_sql";
-        
         if (!empty($params)) {
             $query = $wpdb->prepare($query, $params);
         }
@@ -436,28 +476,6 @@ class Log_Manager {
     }
     
     /**
-     * Cleanup old logs
-     */
-    // public static function cleanup_old_logs() {
-    //     global $wpdb;
-        
-    //     $table_name = $wpdb->prefix . self::TABLE_NAME;
-    //     $retention_days = get_option('log_manager_retention_days', 30);
-        
-    //     $date = date('Y-m-d H:i:s', strtotime("-$retention_days days"));
-        
-    //     $wpdb->query(
-    //         $wpdb->prepare(
-    //             "DELETE FROM $table_name WHERE timestamp < %s",
-    //             $date
-    //         )
-    //     );
-        
-    //     // Optimize table after deletion
-    //     $wpdb->query("OPTIMIZE TABLE $table_name");
-    // }
-    
-    /**
      * Get user IP address
      */
     private static function get_user_ip() {
@@ -506,24 +524,6 @@ class Log_Manager {
         ];
     }
     
-    /**
-     * Should skip option logging?
-     */
-    // public static function should_skip_option($option_name) {
-    //     // Skip cron logs if setting enabled
-    //     if ($option_name === 'cron' && get_option('log_manager_skip_cron', 'yes') === 'yes') {
-    //         return true;
-    //     }
-        
-    //     // Skip other noisy options
-    //     foreach (self::SKIP_OPTIONS as $skip) {
-    //         if (strpos($option_name, $skip) !== false) {
-    //             return true;
-    //         }
-    //     }
-        
-    //     return false;
-    // }
     
     /**
      * Add admin menu
@@ -535,18 +535,27 @@ class Log_Manager {
             'manage_options',
             'log-manager',
             [__CLASS__, 'render_admin_page'],
-            'dashicons-list-view',
+            'dashicons-tide',
             30
         );
         
         // Add settings submenu
+        // add_submenu_page(
+        //     'log-manager',
+        //     __('Settings', 'log-manager'),
+        //     __('Settings', 'log-manager'),
+        //     'manage_options',
+        //     'log-manager-settings',
+        //     [__CLASS__, 'render_settings_page']
+        // );
+
         add_submenu_page(
             'log-manager',
             __('Settings', 'log-manager'),
             __('Settings', 'log-manager'),
             'manage_options',
             'log-manager-settings',
-            [__CLASS__, 'render_settings_page']
+            ['Log_Manager_Settings', 'render_settings_page']  // ← Use Settings class
         );
     }
     

@@ -27,10 +27,14 @@ require_once LOG_MANAGER_PLUGIN_DIR . 'includes/class-log-manager.php';
 require_once LOG_MANAGER_PLUGIN_DIR . 'includes/class-log-manager-hooks.php';
 require_once LOG_MANAGER_PLUGIN_DIR . 'includes/class-log-manager-export.php';
 require_once LOG_MANAGER_PLUGIN_DIR . 'includes/class-log-manager-acf-tracker.php';
+require_once LOG_MANAGER_PLUGIN_DIR . 'includes/class-log-manager-settings.php'; 
+
 
 // Initialize plugin
 add_action('plugins_loaded', function() {
     Log_Manager::init();
+
+    Log_Manager_Settings::init();
 });
 
 // Activation hook
